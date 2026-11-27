@@ -1,8 +1,15 @@
 # SecureMsg: End-to-End Encrypted Messaging with Hybrid Cryptography
 
-An educational, fully working end-to-end encrypted (E2EE) messenger built for a Cryptography and Network Security course. Two users establish a shared secret over an untrusted relay using **signed Diffie-Hellman**, then exchange messages and files protected by a **forward-secret key ratchet** and **AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC)**. A live **Crypto Inspector** shows the protocol working, and an **Attack Lab** demonstrates five real attacks and how each defense stops them.
+[![Live Portfolio](https://img.shields.io/badge/Live%20Portfolio-GitHub%20Pages-2563EB?style=flat-square)](https://vinay3579-code.github.io/Secure-Messaging-Application/)
+[![Tests](https://img.shields.io/badge/Tests-47%2F47%20Passing-0D9488?style=flat-square)](#13-testing)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square)](#2-quick-start)
+[![Cipher](https://img.shields.io/badge/Cipher-AES--256--CBC%20%2B%20HMAC--SHA256-1E293B?style=flat-square)](#6-cryptographic-design)
+
+An educational, fully working end-to-end encrypted (E2EE) messenger built for the **Cryptography and Network Security (CNS)** course. Two users establish a shared secret over an untrusted relay using **signed Diffie-Hellman**, then exchange messages and files protected by a **forward-secret key ratchet** and **AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC)**. A live **Crypto Inspector** shows the protocol working, and an **Attack Lab** demonstrates five real attacks and how each defense stops them.
 
 > **Core principle:** all keys and all plaintext exist only in the users' browsers. The relay server stores public keys, signatures and ciphertext. It never sees a private key, a shared secret, a message key, a file name, or any plaintext.
+
+**Interactive Project Portfolio & Live Browser Demo:** https://vinay3579-code.github.io/Secure-Messaging-Application/
 
 ---
 
@@ -24,6 +31,7 @@ An educational, fully working end-to-end encrypted (E2EE) messenger built for a 
 15. [Security model, limitations and known trade-offs](#15-security-model-limitations-and-known-trade-offs)
 16. [Roadmap](#16-roadmap)
 17. [Troubleshooting](#17-troubleshooting)
+18. [Team](#18-team)
 
 ---
 
@@ -433,6 +441,7 @@ Secure-Messaging-Application/
 ├── inspect_db.py               # Helper to inspect the database
 ├── requirements.txt            # Flask, cryptography
 ├── README.md
+├── docs/                       # Static 9-tab GitHub Pages portfolio & live WebCrypto demo
 ├── uploads/                    # Encrypted file blobs (created at runtime, git-ignored)
 │
 ├── crypto/                     # Python reference implementations
@@ -498,6 +507,17 @@ python -m unittest discover -s tests
 
 The tests create throwaway `e2e_*` accounts and delete them afterwards.
 
+### Measured cryptographic performance (Python reference)
+
+| Operation | Measured latency | Notes |
+| :--- | :---: | :--- |
+| Ratcheted message round-trip (HMAC ratchet + AES-256-CBC + HMAC) | **0.13 ms** | Per message (encrypt, tag, verify, decrypt) |
+| Signed MODP-2048 DH shared secret + subgroup check | **89.51 ms** | Once per session setup |
+| RSA-2048-PSS sign / verify | **67.72 ms / 0.11 ms** | Handshake authentication |
+| PBKDF2-HMAC-SHA256 (100,000 iterations) | **76.49 ms** | Registration / login |
+| Encrypted file blob (10 MB, AES-CBC + HMAC + AAD) | **61.47 ms enc / 57.48 ms dec** | ~163 MB/s encrypt, ~174 MB/s decrypt |
+| Vaudenay CBC padding oracle (2-block ciphertext) | **3,953 queries → decrypted** | **256 queries → 0 B leaked** on Encrypt-then-MAC |
+
 ---
 
 ## 14. Configuration
@@ -551,3 +571,16 @@ Planned next: safety numbers and QR fingerprint verification, self-destructing m
 | Download says *the encrypted file is no longer on the relay* | The conversation was reset, which deletes stored files. |
 | Interop tests are skipped | Install Node.js 18 or newer. |
 | Port already in use | Start with `--port 8080` (or another free port). |
+
+---
+
+## 18. Team
+
+**Team 04** — 7th Semester B.E. Computer Science & Engineering, KLE Technological University, Hubballi.
+
+| Member | Roll No | USN |
+| :--- | :---: | :---: |
+| Anusha Shigihalli | 402 | `01FE23BCS044` |
+| Ananya Hiregoudar | 443 | `01FE23BCS104` |
+| Amogh Talawar | 464 | `01FE24BCS414` |
+| Vinay Madgi | 433 | `01FE23BCS306` |
