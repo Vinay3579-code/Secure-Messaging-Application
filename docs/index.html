@@ -1,42 +1,36 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="aurora">
+<html lang="en" data-theme="studio">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="SecureMsg — End-to-End Encrypted Messaging System Using Hybrid Cryptography. Cryptography and Network Security (CNS) Team 4 Engineering Portfolio." />
+  <meta name="description" content="SecureMsg — End-to-End Encrypted Messaging System Using Hybrid Cryptography. Cryptography and Network Security (CNS) Team 04 Engineering Portfolio." />
   <title>SecureMsg — Hybrid Cryptography Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- Ambient Mesh Background -->
-  <div class="bg-ambient" aria-hidden="true">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <!-- Sticky Navigation Header -->
+  <!-- Sticky Architectural Header -->
   <header class="site-header">
     <div class="header-inner">
       <a href="#home" class="brand" data-nav="home">
-        <span class="brand-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="M9 12l2 2 4-4"/>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="11" width="16" height="10" rx="2.5"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+            <circle cx="12" cy="16" r="1.3" fill="currentColor" stroke="none"/>
           </svg>
         </span>
-        <span class="brand-text">
+        <span class="brand-copy">
           <span class="brand-name">SecureMsg</span>
-          <span class="brand-sub">CNS // HYBRID E2EE</span>
+          <span class="brand-sub">CNS · TEAM 04</span>
         </span>
       </a>
 
-      <!-- Desktop 9-Tab Navigation -->
+      <!-- Exact 9 Navigation Tabs -->
       <nav class="nav-desktop" aria-label="Primary Navigation">
         <a href="#home" class="nav-link" data-nav="home">Home</a>
         <a href="#overview" class="nav-link" data-nav="overview">Overview</a>
@@ -50,38 +44,38 @@
       </nav>
 
       <div class="header-actions">
-        <button id="theme-cycle" class="theme-btn" type="button" title="Switch portfolio theme">
-          <span class="theme-dot"></span>
-          <span id="theme-label">Aurora</span>
-        </button>
+        <div class="theme-switch" role="group" aria-label="Color theme">
+          <button type="button" class="ts-btn" data-set-theme="studio" title="Studio Light">Studio</button>
+          <button type="button" class="ts-btn" data-set-theme="carbon" title="Carbon Dark">Carbon</button>
+        </div>
         <button id="mobile-toggle" class="mobile-btn" type="button" aria-label="Toggle navigation" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
           </svg>
         </button>
       </div>
     </div>
 
-    <!-- Mobile Navigation Drawer -->
+    <!-- Mobile Drawer -->
     <nav id="nav-mobile" class="nav-mobile" aria-label="Mobile Navigation" hidden>
-      <a href="#home" class="mob-link" data-nav="home"><span>Home</span><span class="mob-path">/home</span></a>
-      <a href="#overview" class="mob-link" data-nav="overview"><span>Project Overview</span><span class="mob-path">/overview</span></a>
-      <a href="#architecture" class="mob-link" data-nav="architecture"><span>System Architecture</span><span class="mob-path">/architecture</span></a>
-      <a href="#protocol" class="mob-link" data-nav="protocol"><span>Eight-Stage Protocol</span><span class="mob-path">/protocol</span></a>
-      <a href="#implementation" class="mob-link" data-nav="implementation"><span>Cryptography &amp; Code</span><span class="mob-path">/implementation</span></a>
-      <a href="#demo" class="mob-link" data-nav="demo"><span>Interactive Demo</span><span class="mob-path">/demo</span></a>
-      <a href="#evidence" class="mob-link" data-nav="evidence"><span>Audit &amp; Evidence</span><span class="mob-path">/evidence</span></a>
-      <a href="#results" class="mob-link" data-nav="results"><span>Testing &amp; Results</span><span class="mob-path">/results</span></a>
-      <a href="#team" class="mob-link" data-nav="team"><span>Team 04</span><span class="mob-path">/team</span></a>
+      <a href="#home" class="mob-link" data-nav="home"><span>Home</span><span class="mob-path">01</span></a>
+      <a href="#overview" class="mob-link" data-nav="overview"><span>Overview</span><span class="mob-path">02</span></a>
+      <a href="#architecture" class="mob-link" data-nav="architecture"><span>Architecture</span><span class="mob-path">03</span></a>
+      <a href="#protocol" class="mob-link" data-nav="protocol"><span>Protocol</span><span class="mob-path">04</span></a>
+      <a href="#implementation" class="mob-link" data-nav="implementation"><span>Implementation</span><span class="mob-path">05</span></a>
+      <a href="#demo" class="mob-link" data-nav="demo"><span>Demo</span><span class="mob-path">06</span></a>
+      <a href="#evidence" class="mob-link" data-nav="evidence"><span>Evidence</span><span class="mob-path">07</span></a>
+      <a href="#results" class="mob-link" data-nav="results"><span>Results</span><span class="mob-path">08</span></a>
+      <a href="#team" class="mob-link" data-nav="team"><span>Team</span><span class="mob-path">09</span></a>
     </nav>
   </header>
 
-  <!-- Dynamic Page Outlet -->
+  <!-- Main View -->
   <main id="main-content" class="main-wrap" tabindex="-1"></main>
 
-  <!-- Diagram Zoom Lightbox Modal -->
+  <!-- Zoomable Diagram Lightbox -->
   <div id="diagram-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-dialog">
@@ -102,48 +96,44 @@
     </div>
   </div>
 
-  <!-- Editorial Footer -->
+  <!-- Clean Editorial Footer -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-col">
         <div class="footer-brand">
-          <span class="footer-dot"></span>
-          <strong>SecureMsg — End-to-End Encrypted Messaging System</strong>
+          <span class="brand-mark sm" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          </span>
+          <strong>SecureMsg — Hybrid E2EE Messenger</strong>
         </div>
         <p class="footer-desc">
           Cryptography &amp; Network Security (CNS) Course Project by <strong>Team 04</strong>.
-          Implements RSA-2048-PSS signed Diffie-Hellman (RFC 3526), transcript-salted HKDF-SHA256,
-          a per-message symmetric hash ratchet, AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC),
-          encrypted file sharing up to 10 MB, and a 5-scenario Attack Lab verified by 47 automated tests.
+          RSA-2048-PSS signed Diffie-Hellman (RFC 3526), transcript-salted HKDF-SHA256,
+          forward-secret hash ratchet, AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC),
+          encrypted file sharing, and 47 verified automated tests.
         </p>
       </div>
 
       <div class="footer-col">
-        <div class="footer-head">SEMANTIC COLOR LEGEND</div>
+        <div class="footer-head">PROTOCOL COLOR KEY</div>
         <ul class="legend-list">
-          <li><span class="swatch violet"></span><strong>Violet</strong> — Asymmetric Key Agreement &amp; Identity (DH-2048, RSA-PSS)</li>
-          <li><span class="swatch cyan"></span><strong>Cyan</strong> — Symmetric Cipher &amp; Encrypted Blobs (AES-256-CBC, TLS)</li>
-          <li><span class="swatch emerald"></span><strong>Emerald</strong> — Verified Integrity &amp; Forward Secrecy (HMAC, Ratchet)</li>
-          <li><span class="swatch amber"></span><strong>Amber</strong> — Forensic Evidence &amp; Wire Inspection (SQLite, Inspector)</li>
-          <li><span class="swatch rose"></span><strong>Rose</strong> — Blocked Attacks (MITM, Tamper, Replay 409, Padding Oracle)</li>
+          <li><span class="swatch indigo"></span><strong>Indigo</strong> — Identity &amp; Asymmetric Exchange (RSA-PSS, DH-2048)</li>
+          <li><span class="swatch cobalt"></span><strong>Cobalt</strong> — Symmetric Encryption &amp; Blobs (AES-256-CBC, TLS)</li>
+          <li><span class="swatch teal"></span><strong>Emerald</strong> — Integrity &amp; Forward Secrecy (HMAC, Hash Ratchet)</li>
+          <li><span class="swatch amber"></span><strong>Amber</strong> — Relay Storage &amp; Forensic Telemetry (SQLite, Inspector)</li>
+          <li><span class="swatch crimson"></span><strong>Crimson</strong> — Blocked Attacks (MITM, Tamper, Replay 409, Oracle)</li>
         </ul>
       </div>
 
       <div class="footer-col">
-        <div class="footer-head">PROJECT &amp; REPOSITORY</div>
-        <p class="footer-meta">7th Semester · B.E. Computer Science &amp; Engineering</p>
-        <p class="footer-meta">Anusha · Ananya · Amogh · Vinay (Team 04)</p>
+        <div class="footer-head">TEAM 04 · 7TH SEM CSE</div>
+        <p class="footer-meta">Anusha Shigihalli · Ananya Hiregoudar</p>
+        <p class="footer-meta">Amogh Talawar · Vinay Madgi</p>
         <div class="footer-links">
-          <a href="#demo" data-nav="demo" class="f-pill emerald">Live Demo</a>
-          <a href="#evidence" data-nav="evidence" class="f-pill amber">Audit Evidence</a>
-          <a href="#team" data-nav="team" class="f-pill cyan">Team 04</a>
-          <a href="https://github.com/Vinay3579-code/Secure-Messaging-Application" target="_blank" rel="noopener" class="f-pill violet">GitHub Repo ↗</a>
-        </div>
-        <div class="footer-themes">
-          <span class="footer-theme-label">Theme:</span>
-          <button type="button" class="ft-btn" data-set-theme="aurora">Aurora</button>
-          <button type="button" class="ft-btn" data-set-theme="ocean">Ocean</button>
-          <button type="button" class="ft-btn" data-set-theme="light">Light</button>
+          <a href="#demo" data-nav="demo" class="f-link">Live Demo</a>
+          <a href="#protocol" data-nav="protocol" class="f-link">Protocol</a>
+          <a href="#results" data-nav="results" class="f-link">47 Tests</a>
+          <a href="https://github.com/Vinay3579-code/Secure-Messaging-Application" target="_blank" rel="noopener" class="f-link primary">GitHub Repo ↗</a>
         </div>
       </div>
     </div>
