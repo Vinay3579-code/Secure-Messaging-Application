@@ -8,6 +8,11 @@ import os
 from pathlib import Path
 
 DB_FILE = Path(__file__).resolve().parent / "messaging.db"
+UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
+
+def blob_path(file_id):
+    """Only ever called with a validated 32-hex file id."""
+    return UPLOAD_DIR / f"{file_id}.bin"
 
 def get_db_connection(db_path=None):
     if db_path is None:
@@ -64,9 +69,15 @@ def init_db(db_path=None):
         timestamp TEXT NOT NULL,
         seq_no INTEGER NOT NULL,
         is_read INTEGER DEFAULT 0,
+        cipher_mode TEXT DEFAULT 'cbc-hmac',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    # Migration: databases created before AEAD support lack the cipher_mode column
+    cursor.execute("PRAGMA table_info(messages)")
+    if "cipher_mode" not in [row[1] for row in cursor.fetchall()]:
+        cursor.execute("ALTER TABLE messages ADD COLUMN cipher_mode TEXT DEFAULT 'cbc-hmac'")
 
     # Table 4: Seen Nonces / Message IDs for Replay Protection
     cursor.execute("""
@@ -76,6 +87,18 @@ def init_db(db_path=None):
         receiver TEXT NOT NULL,
         seq_no INTEGER NOT NULL,
         received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Table 5: Encrypted file blobs (metadata only; the opaque blob lives in uploads/)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        file_id TEXT PRIMARY KEY,
+        uploader TEXT NOT NULL,
+        recipient TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        sha256 TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -106,6 +129,15 @@ def get_user_by_username(username, db_path=None):
     conn.close()
     return dict(row) if row else None
 
+def update_user_identity_key(username, public_identity_key, db_path=None):
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET public_identity_key = ? WHERE username = ?", (public_identity_key, username))
+    conn.commit()
+    updated = cursor.rowcount > 0
+    conn.close()
+    return updated
+
 def get_all_users(db_path=None):
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
@@ -131,15 +163,47 @@ def create_dh_session(session_id, user1, user2, dh_p, dh_g, pub_a, sig_a=None, d
     conn.commit()
     conn.close()
 
+def _delete_files(cursor, where, params):
+    """Removes file rows and their blobs on disk."""
+    cursor.execute(f"SELECT file_id FROM files {where}", params)
+    for row in cursor.fetchall():
+        try:
+            blob_path(row[0]).unlink()
+        except FileNotFoundError:
+            pass
+    cursor.execute(f"DELETE FROM files {where}", params)
+
+# ----------------- File Helpers -----------------
+def save_file_record(file_id, uploader, recipient, size, sha256, db_path=None):
+    conn = get_db_connection(db_path)
+    conn.execute("INSERT INTO files (file_id, uploader, recipient, size, sha256) VALUES (?, ?, ?, ?, ?)",
+                 (file_id, uploader, recipient, size, sha256))
+    conn.commit()
+    conn.close()
+
+def get_file_record(file_id, db_path=None):
+    conn = get_db_connection(db_path)
+    row = conn.execute("SELECT * FROM files WHERE file_id = ?", (file_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def list_file_records(limit=50, db_path=None):
+    conn = get_db_connection(db_path)
+    rows = conn.execute("SELECT file_id, uploader, recipient, size, sha256, created_at FROM files ORDER BY rowid DESC LIMIT ?", (limit,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 def clear_messages_and_sessions(user1=None, user2=None, db_path=None):
     """Clears messages and sessions for a fresh demonstration."""
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
     if user1 and user2:
+        _delete_files(cursor, "WHERE (uploader = ? AND recipient = ?) OR (uploader = ? AND recipient = ?)", (user1, user2, user2, user1))
         cursor.execute("DELETE FROM messages WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)", (user1, user2, user2, user1))
         cursor.execute("DELETE FROM dh_sessions WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?)", (user1, user2, user2, user1))
         cursor.execute("DELETE FROM processed_messages WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)", (user1, user2, user2, user1))
     else:
+        _delete_files(cursor, "", ())
         cursor.execute("DELETE FROM messages")
         cursor.execute("DELETE FROM dh_sessions")
         cursor.execute("DELETE FROM processed_messages")
@@ -216,13 +280,14 @@ def record_and_verify_replay(message_id, sender, receiver, seq_no, db_path=None)
     finally:
         conn.close()
 
-def save_message(message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no, db_path=None):
+def save_message(message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no,
+                 cipher_mode='cbc-hmac', db_path=None):
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT INTO messages (message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no))
+    INSERT INTO messages (message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no, cipher_mode)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no, cipher_mode))
     conn.commit()
     conn.close()
 

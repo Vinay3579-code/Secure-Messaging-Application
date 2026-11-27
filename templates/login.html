@@ -3,129 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CNS Secure Messaging System</title>
+    <title>Sign in | SecureMsg Console</title>
+    <meta name="description" content="Secure sign-in with PBKDF2-HMAC-SHA256 password hashing; identity keys are generated in your browser">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <a href="/" class="brand">
-            <span>🛡️ CNS Secure Messaging</span>
-            <span class="brand-badge">E2EE Prototype</span>
-        </a>
-        <div class="nav-links">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/attacks" class="nav-link">Attack</a>
-        </div>
-    </nav>
+{% include '_icons.html' %}
+<div class="auth-wrap">
+    <div class="auth-card">
 
-    <div class="container" style="max-width: 480px; margin-top: 2rem;">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title" id="form-title">User Authentication</h2>
-                <span class="badge badge-info">PBKDF2-HMAC-SHA256</span>
+        <!-- Left: product summary -->
+        <div class="auth-aside">
+            <div class="nav-brand" style="padding:0; height:auto; border:0;">
+                <div class="brand-mark"><svg class="ic"><use href="#i-shield"/></svg></div>
+                <div><div class="brand-name">SecureMsg</div><div class="brand-sub">Hybrid cryptography console</div></div>
             </div>
+            <div>
+                <h2>Private conversations, verifiably.</h2>
+                <p style="margin-top:.5rem;">Messages are encrypted in your browser before they leave your device. The relay server only ever holds ciphertext.</p>
+            </div>
+            <ul class="feature-list">
+                <li><svg class="ic"><use href="#i-key"/></svg><span><strong>Signed key exchange</strong>Diffie-Hellman values are authenticated with RSA identity keys generated in your browser.</span></li>
+                <li><svg class="ic"><use href="#i-layers"/></svg><span><strong>Forward secrecy</strong>Every message uses its own key, erased right after use.</span></li>
+                <li><svg class="ic"><use href="#i-lock"/></svg><span><strong>Hardened passwords</strong>PBKDF2-HMAC-SHA256, 100,000 rounds, unique salt. No plaintext is stored.</span></li>
+            </ul>
+            <div class="tag-row">
+                <span class="tag">AES-CBC</span><span class="tag">HMAC-SHA256</span><span class="tag">DH-2048</span>
+                <span class="tag">HKDF</span><span class="tag">RSA-PSS</span><span class="tag">PBKDF2</span><span class="tag">TLS 1.3</span>
+            </div>
+        </div>
 
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <button id="tab-login" class="btn btn-primary" style="flex: 1;" onclick="switchTab('login')">Sign In</button>
-                <button id="tab-register" class="btn btn-secondary" style="flex: 1;" onclick="switchTab('register')">Register</button>
+        <!-- Right: form -->
+        <div class="auth-main">
+            <h3 id="form-title">Welcome back</h3>
+            <p class="subtitle">Sign in to your account or create a new one</p>
+
+            <div class="tab-row">
+                <button id="tab-login" class="tab-btn active" type="button" onclick="switchTab('login')">Sign in</button>
+                <button id="tab-register" class="tab-btn" type="button" onclick="switchTab('register')">Register</button>
             </div>
 
             <form id="auth-form" onsubmit="handleAuth(event)">
                 <div class="form-group">
                     <label class="form-label" for="username">Username</label>
-                    <input type="text" id="username" class="form-input" placeholder="e.g. alice or bob" required autocomplete="username">
+                    <input type="text" id="username" class="form-input" placeholder="For example alice or bob" required autocomplete="username">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
                 </div>
 
-                <div id="auth-status" style="margin-bottom: 1rem; font-size: 0.85rem; display: none;"></div>
+                <div id="auth-status"></div>
 
-                <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                <button type="submit" id="submit-btn" class="btn btn-primary btn-block" style="padding:.62rem;">Sign in</button>
             </form>
 
-            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; text-align: center;">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Quick Demo Accounts (Auto-generates if not existing):</div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;" onclick="quickLogin('alice')">👤 Sign in as Alice</button>
-                    <button class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;" onclick="quickLogin('bob')">👤 Sign in as Bob</button>
-                </div>
+            <div class="divider">or use a demo account</div>
+
+            <div class="quick-login-row">
+                <button class="btn btn-secondary" type="button" onclick="quickLogin('alice')">Continue as Alice</button>
+                <button class="btn btn-secondary" type="button" onclick="quickLogin('bob')">Continue as Bob</button>
             </div>
+
+            <p class="auth-note">
+                Demo accounts use the password <code>password123</code> and are created automatically.<br>
+                <a href="/chat" style="color:var(--brand-600); font-weight:600;">Go to live chat</a>
+            </p>
         </div>
     </div>
+</div>
 
-    <script>
-        let currentMode = 'login';
+<script src="/static/js/crypto_client.js"></script>
+<script>
+    let currentMode = 'login';
 
-        function switchTab(mode) {
-            currentMode = mode;
-            document.getElementById('form-title').innerText = mode === 'login' ? 'User Authentication' : 'Create Secure Account';
-            document.getElementById('submit-btn').innerText = mode === 'login' ? 'Sign In' : 'Register Account';
-            document.getElementById('tab-login').className = mode === 'login' ? 'btn btn-primary' : 'btn btn-secondary';
-            document.getElementById('tab-register').className = mode === 'register' ? 'btn btn-primary' : 'btn btn-secondary';
-            hideStatus();
-        }
+    function switchTab(mode) {
+        currentMode = mode;
+        const isLogin = mode === 'login';
+        document.getElementById('form-title').innerText    = isLogin ? 'Welcome back' : 'Create your account';
+        document.getElementById('submit-btn').innerText    = isLogin ? 'Sign in' : 'Create account';
+        document.getElementById('tab-login').className     = 'tab-btn' + (isLogin ? ' active' : '');
+        document.getElementById('tab-register').className  = 'tab-btn' + (!isLogin ? ' active' : '');
+        hideStatus();
+    }
 
-        function showStatus(text, isError) {
-            const st = document.getElementById('auth-status');
-            st.style.display = 'block';
-            st.style.color = isError ? '#ef4444' : '#22c55e';
-            st.innerText = text;
-        }
+    function showStatus(text, isError) {
+        const st = document.getElementById('auth-status');
+        st.style.display = 'block';
+        st.className      = isError ? 'error' : 'success';
+        st.innerText      = text;
+    }
 
-        function hideStatus() {
-            document.getElementById('auth-status').style.display = 'none';
-        }
+    function hideStatus() {
+        const st = document.getElementById('auth-status');
+        st.style.display = 'none';
+        st.className = '';
+    }
 
-        async function handleAuth(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+    async function handleAuth(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+        const idleLabel = currentMode === 'login' ? 'Sign in' : 'Create account';
 
-            const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-            try {
-                const resp = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const data = await resp.json();
+        document.getElementById('submit-btn').innerText = currentMode === 'login' ? 'Signing in…' : 'Creating account…';
 
-                if (data.success) {
-                    showStatus(data.message || "Success! Redirecting...", false);
-                    setTimeout(() => { window.location.href = '/chat'; }, 600);
-                } else {
-                    showStatus(data.error || "Authentication failed", true);
-                }
-            } catch (err) {
-                showStatus("Network or server error", true);
+        try {
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                // RSA identity key is generated in this browser; only the public key is sent to the server
+                await SecureCryptoClient.ensureIdentity(data.username || username.toLowerCase(), password, data.public_identity_key);
+                showStatus(data.message || 'Success. Redirecting…', false);
+                setTimeout(() => { window.location.href = '/chat'; }, 700);
+            } else {
+                showStatus(data.error || 'Authentication failed', true);
+                document.getElementById('submit-btn').innerText = idleLabel;
             }
+        } catch (err) {
+            showStatus(err.message || 'Network or server error', true);
+            document.getElementById('submit-btn').innerText = idleLabel;
         }
+    }
 
-        async function quickLogin(user) {
-            document.getElementById('username').value = user;
-            document.getElementById('password').value = 'password123';
-            
-            // Try login, if fails, register
+    async function quickLogin(user) {
+        document.getElementById('username').value = user;
+        document.getElementById('password').value = 'password123';
+        showStatus('Signing in as ' + user + '…', false);
+
+        try {
             const loginResp = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: user, password: 'password123' })
             });
-            const loginData = await loginResp.json();
-            if (loginData.success) {
-                window.location.href = '/chat';
-            } else {
-                await fetch('/api/auth/register', {
+            let data = await loginResp.json();
+
+            if (!data.success) {
+                const regResp = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: 'password123' })
                 });
-                window.location.href = '/chat';
+                data = await regResp.json();
             }
+            if (data.success) {
+                await SecureCryptoClient.ensureIdentity(user, 'password123', data.public_identity_key);
+                window.location.href = '/chat';
+            } else {
+                showStatus(data.error || 'Authentication failed', true);
+            }
+        } catch (err) {
+            showStatus(err.message || 'Network or server error', true);
         }
-    </script>
+    }
+</script>
 </body>
 </html>

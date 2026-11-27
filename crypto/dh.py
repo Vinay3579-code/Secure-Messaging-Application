@@ -23,6 +23,20 @@ RFC_3526_2048_PRIME_HEX = (
 )
 RFC_3526_2048_PRIME = int(RFC_3526_2048_PRIME_HEX, 16)
 RFC_3526_GENERATOR = 2
+# p is a safe prime (p = 2q + 1) and g = 2 generates the prime-order-q subgroup.
+RFC_3526_2048_SUBGROUP_ORDER = (RFC_3526_2048_PRIME - 1) // 2
+
+def is_valid_public_value(y: int, p: int = RFC_3526_2048_PRIME) -> bool:
+    """
+    Validates a peer's DH public value.
+    Range check (1 < y < p-1) plus, for the RFC 3526 group, a subgroup check (y^q == 1 mod p)
+    which rejects small-subgroup / invalid-key confinement attacks.
+    """
+    if not (1 < y < p - 1):
+        return False
+    if p == RFC_3526_2048_PRIME:
+        return pow(y, RFC_3526_2048_SUBGROUP_ORDER, p) == 1
+    return True
 
 class DiffieHellman:
     """
@@ -51,7 +65,7 @@ class DiffieHellman:
         Returns big-endian bytes representation of the shared secret.
         """
         peer_public_int = int(peer_public_hex, 16)
-        if not (1 < peer_public_int < self.p - 1):
+        if not is_valid_public_value(peer_public_int, self.p):
             raise ValueError("Invalid peer public key: outside subgroup bounds")
         
         shared_int = pow(peer_public_int, self.private_key, self.p)

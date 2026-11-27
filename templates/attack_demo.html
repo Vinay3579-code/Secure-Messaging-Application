@@ -3,201 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attack - CNS Project</title>
+    <title>Attack lab | SecureMsg Console</title>
+    <meta name="description" content="Attack and defense laboratory: eavesdropping, tampering, replay, man-in-the-middle and CBC padding oracle, run live against the real cryptography">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <a href="/" class="brand">
-            <span>🛡️ CNS Secure Messaging</span>
-            <span class="brand-badge">Attack</span>
-        </a>
-        <div class="nav-links">
-            <a href="/" class="nav-link">Dual Simulator</a>
-            <a href="/chat" class="nav-link">Live Chat</a>
-            <a href="/login" class="nav-link">Login</a>
-        </div>
-    </nav>
+<div class="shell">
+    {% set active = 'attacks' %}
+    {% include '_sidebar.html' %}
 
-    <div class="container">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h1 style="font-size: 1.8rem; font-weight: 800;">⚡ Attack</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 750px; margin: 0.5rem auto 0;">
-                Demonstrate the system's resilience against common cryptographic and network security threats.
-                Each test runs live cryptographic validations and outputs diagnostic packet telemetry.
-            </p>
-        </div>
+    <div class="content">
+        <header class="topbar">
+            <div>
+                <div class="crumbs">Workspace / Attack lab</div>
+                <h1>Attack and defense laboratory</h1>
+            </div>
+            <div class="topbar-right">
+                <span class="badge badge-warning badge-plain">5 scenarios</span>
+                <span class="badge badge-success">All defenses active</span>
+            </div>
+        </header>
 
-        <div class="attack-grid">
-            <!-- Attack 1: Plaintext Interception -->
-            <div class="attack-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700;">1. Eavesdropping / Sniffing</h3>
-                    <span class="badge badge-warning">Passive Attack</span>
+        <main class="page">
+            <div class="card">
+                <div class="card-body" style="padding:.85rem 1.15rem; color:var(--ink-2); font-size:13.5px;">
+                    Each scenario runs <strong>real cryptographic operations</strong>: real keys, real ciphertext and real verification.
+                    Pick an attack on the left, run it, and read the telemetry to see exactly where the defense stops it.
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">
-                    Simulates network packet capture (e.g. via Wireshark) comparing unencrypted HTTP vs TLS + E2EE AES-256.
-                </p>
-                <div class="form-group">
-                    <input type="text" id="eavesdrop-input" class="form-input" value="Confidential financial transfer: $5,000 to Account #84920">
-                </div>
-                <button class="btn btn-primary" onclick="runEavesdropDemo()">Execute Sniffing Simulation</button>
-                <div id="eavesdrop-output" class="attack-output">Click "Execute" to run simulation...</div>
             </div>
 
-            <!-- Attack 2: Message Tampering -->
-            <div class="attack-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700;">2. Message Tampering</h3>
-                    <span class="badge badge-danger">Active Attack</span>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">
-                    Adversary alters one byte of ciphertext in transit. Recipient validates HMAC-SHA256 before decryption.
-                </p>
-                <div class="form-group">
-                    <input type="text" id="tamper-input" class="form-input" value="Transfer $100 to Vendor">
-                </div>
-                <button class="btn btn-danger" onclick="runTamperDemo()">Execute Tampering Attack</button>
-                <div id="tamper-output" class="attack-output">Click "Execute" to run simulation...</div>
-            </div>
+            <div class="lab">
+                <!-- Scenario list -->
+                <div class="card lab-list" id="lab-list"></div>
 
-            <!-- Attack 3: Replay Attack -->
-            <div class="attack-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700;">3. Replay Attack</h3>
-                    <span class="badge badge-danger">Active Attack</span>
+                <!-- Scenario detail -->
+                <div class="card lab-detail">
+                    <div class="card-head">
+                        <div>
+                            <div class="card-title" id="lab-title"></div>
+                            <div class="card-sub" id="lab-kind"></div>
+                        </div>
+                        <span class="badge" id="lab-badge"></span>
+                    </div>
+                    <div class="card-body">
+                        <p class="lab-desc" id="lab-desc"></p>
+                        <div class="lab-flow" id="lab-flow"></div>
+                        <div class="lab-actions">
+                            <div class="form-group" id="lab-input-group">
+                                <label class="form-label" id="lab-input-label" for="lab-input"></label>
+                                <input type="text" id="lab-input" class="form-input">
+                            </div>
+                            <button class="btn btn-primary" id="lab-run" type="button"><svg class="ic ic-sm"><use href="#i-play"/></svg>Run simulation</button>
+                        </div>
+                        <div class="console">
+                            <div class="console-bar"><span>Telemetry</span><span id="lab-status">Idle</span></div>
+                            <div id="attack-output" class="attack-output">Select Run simulation to execute this scenario.</div>
+                        </div>
+                    </div>
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">
-                    Adversary captures a legitimate encrypted message packet and re-transmits it to cause duplicate processing.
-                </p>
-                <div class="form-group">
-                    <input type="text" id="replay-input" class="form-input" value="msg-tx-auth-98172">
-                </div>
-                <button class="btn btn-danger" onclick="runReplayDemo()">Execute Replay Attack</button>
-                <div id="replay-output" class="attack-output">Click "Execute" to run simulation...</div>
             </div>
-
-            <!-- Attack 4: Man-in-the-Middle (MITM) -->
-            <div class="attack-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700;">4. Man-in-the-Middle (MITM)</h3>
-                    <span class="badge badge-info">Asymmetric Defense</span>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">
-                    Compares unauthenticated Diffie-Hellman vulnerability against RSA Digital Signature defense.
-                </p>
-                <div style="font-size: 0.8rem; color: #38bdf8; background-color: var(--code-bg); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
-                    Alice ➔ (Pub A signed by RSA Priv) ➔ Relay ➔ Bob
-                </div>
-                <button class="btn btn-primary" onclick="runMitmDemo()">Execute MITM & Signature Test</button>
-                <div id="mitm-output" class="attack-output">Click "Execute" to run simulation...</div>
-            </div>
-        </div>
+        </main>
     </div>
+</div>
 
-    <script>
-        async function runEavesdropDemo() {
-            const out = document.getElementById('eavesdrop-output');
-            out.innerText = "Simulating packet capture...";
-            const text = document.getElementById('eavesdrop-input').value;
+<script>
+    function setOutput(text, state) {
+        const el = document.getElementById('attack-output');
+        el.innerText = text;
+        el.className = 'attack-output' + (state === 'ok' ? ' has-result' : state === 'err' ? ' has-error' : '');
+        document.getElementById('lab-status').innerText = state === 'ok' ? 'Completed' : state === 'err' ? 'Error' : 'Running…';
+    }
 
-            const resp = await fetch('/api/attacks/eavesdrop', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
-            });
-            const data = await resp.json();
+    async function postJson(url, body) {
+        const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+        return resp.json();
+    }
 
-            out.innerText = 
-`[!] UNENCRYPTED HTTP SNIFF (Wireshark Capture):
+    const ATTACKS = [
+        {
+            id: 'eavesdrop', name: 'Eavesdropping', kind: 'Passive, network sniffing', badge: ['badge-warning', 'Passive'],
+            desc: 'Simulates a packet capture (for example Wireshark) and compares unencrypted HTTP with TLS plus end-to-end AES-256. An eavesdropper sees the whole message in plain HTTP but only opaque ciphertext here.',
+            flow: 'Sender  ->  [ attacker on the wire ]  ->  Relay',
+            label: 'Intercepted message', value: 'Confidential financial transfer: $5,000 to Account #84920',
+            async run(v) {
+                const d = await postJson('/api/attacks/eavesdrop', { message: v });
+                return `UNENCRYPTED HTTP CAPTURE
 ------------------------------------------------
-${data.insecure_http_sniff.packet_payload}
-EXPOSURE: ${data.insecure_http_sniff.vulnerability}
+${d.insecure_http_sniff.packet_payload}
+Exposure: ${d.insecure_http_sniff.vulnerability}
 
-[+] TLS 1.3 + E2EE AES-256 CAPTURE (Our System):
+TLS 1.3 + END-TO-END AES-256 CAPTURE (this system)
 ------------------------------------------------
-Payload Observed: ${data.secure_e2ee_tls_sniff.packet_payload}
-PROTECTION: ${data.secure_e2ee_tls_sniff.protection}`;
+Payload observed: ${d.secure_e2ee_tls_sniff.packet_payload}
+Protection: ${d.secure_e2ee_tls_sniff.protection}`;
+            }
+        },
+        {
+            id: 'tamper', name: 'Message tampering', kind: 'Active, bit-flip in transit', badge: ['badge-danger', 'Active'],
+            desc: 'An adversary changes one byte of the ciphertext in transit, for example to turn $100 into $900. The recipient verifies the MAC before decrypting, so any alteration is detected and the message is dropped.',
+            flow: 'Sender  ->  [ attacker flips a byte ]  ->  Recipient verifies HMAC-SHA256',
+            label: 'Original message', value: 'Transfer $100 to Vendor',
+            async run(v) {
+                const d = await postJson('/api/attacks/tamper', { message: v });
+                return `Original plaintext:   "${d.plaintext}"
+Authentic ciphertext: ${d.authentic_packet.ciphertext.substring(0, 32)}...
+Authentic HMAC tag:   ${d.authentic_packet.hmac_tag.substring(0, 24)}...
+Original HMAC check:  ${d.authentic_packet.hmac_verified ? 'PASSED' : 'FAILED'}
+
+ADVERSARY MODIFIES THE CIPHERTEXT
+Byte altered:         ${d.tampered_packet.original_byte} -> ${d.tampered_packet.modified_byte}
+Tampered ciphertext:  ${d.tampered_packet.tampered_ciphertext.substring(0, 32)}...
+Expected HMAC:        ${d.tampered_packet.expected_tag_for_tampered.substring(0, 24)}...
+Received tag:         ${d.tampered_packet.received_tag.substring(0, 24)}...
+Recipient HMAC check: ${d.tampered_packet.hmac_verified ? 'PASSED' : 'FAILED'}
+
+Verdict: ${d.verdict}
+Action:  ${d.action}`;
+            }
+        },
+        {
+            id: 'replay', name: 'Replay attack', kind: 'Active, packet re-transmission', badge: ['badge-danger', 'Active'],
+            desc: 'The adversary captures a valid encrypted packet and sends it again to trigger a duplicate action. The relay rejects a reused message ID, and each client also refuses a message key it has already consumed.',
+            flow: 'Sender  ->  Relay  ...  [ attacker re-sends the same packet ]  ->  Relay rejects (409)',
+            label: 'Captured message ID', value: 'msg-tx-auth-98172',
+            async run(v) {
+                const d = await postJson('/api/attacks/replay', { message_id: v, seq_no: 104 });
+                const second = d['second_transmission (adversary replay)'];
+                return `Target message ID: ${d.message_id} (sequence #${d.seq_no})
+
+1. Legitimate transmission
+   Status:    ${d.first_transmission.status}
+   Is replay: ${d.first_transmission.is_replay}
+   Result:    ${d.first_transmission.result}
+
+2. Attacker re-sends the same packet
+   Status:    ${second.status}
+   Is replay: ${second.is_replay}
+   Result:    ${second.result}
+
+Defense confirmed: nonce and sequence tracking prevents replay.`;
+            }
+        },
+        {
+            id: 'mitm', name: 'Man-in-the-middle on DH', kind: 'Active, key substitution', badge: ['badge-info', 'Asymmetric defense'],
+            desc: 'Unauthenticated Diffie-Hellman is vulnerable: an attacker substitutes both public values and reads everything. Signing each DH value with RSA-2048 binds it to an identity, so a substituted value fails verification.',
+            flow: 'Alice  ->  Sign(A, RSA private key)  ->  Relay  ->  Bob verifies signature  ->  accepted or aborted',
+            label: null, value: '',
+            async run() {
+                const d = await postJson('/api/attacks/mitm');
+                const u = d.unauthenticated_dh, a = d.authenticated_dh_with_rsa_signatures;
+                return `SCENARIO 1: unauthenticated Diffie-Hellman
+-------------------------------------------
+Vulnerability:      ${u.vulnerability}
+MITM compromise:    ${u.mitm_achieved ? 'SUCCEEDED (attacker sits between both parties)' : 'FAILED'}
+Analysis:           ${u.explanation}
+
+SCENARIO 2: DH signed with RSA (this system)
+-------------------------------------------
+Genuine packet verified:        ${a.genuine_packet_verified ? 'PASSED' : 'FAILED'}
+Substituted value verified:     ${a.eve_tampered_packet_verified ? 'PASSED' : 'REJECTED'}
+MITM prevented:                 ${a.mitm_prevented ? 'YES' : 'NO'}
+Defense: ${a.explanation}`;
+            }
+        },
+        {
+            id: 'padding', name: 'CBC padding oracle', kind: 'Active, decrypt without the key', badge: ['badge-danger', 'Active'],
+            desc: 'If a server reveals whether the padding of a decrypted message was valid, an attacker can decrypt AES-CBC without the key (Vaudenay). This runs the real attack on unauthenticated CBC, then against Encrypt-then-MAC where every answer is identical.',
+            flow: 'Attacker forges ciphertext blocks  ->  oracle says "padding valid?"  ->  plaintext recovered byte by byte',
+            label: 'Secret message (max 48 characters)', value: 'Meet at 5PM, vault code 4821', max: 48,
+            async run(v) {
+                const d = await postJson('/api/attacks/padding-oracle', { message: v });
+                const a = d.vulnerable_cbc, s = d.authenticated_design;
+                return `SCENARIO 1: AES-CBC without authentication (padding oracle exposed)
+--------------------------------------------------------------------
+Ciphertext (${a.blocks} blocks): ${a.ciphertext_hex.substring(0, 32)}...
+The attacker has NO key. Oracle queries used: ${a.oracle_queries}
+Recovered plaintext: "${a.recovered_plaintext}"
+Attack: ${a.attack_succeeded ? 'SUCCEEDED (message fully decrypted)' : 'failed'}
+
+SCENARIO 2: AES-CBC + HMAC, Encrypt-then-MAC (this system)
+--------------------------------------------------------------------
+Oracle queries before the attacker gives up: ${s.oracle_queries_before_giving_up}
+Attack: ${s.attack_defeated ? 'DEFEATED' : 'succeeded'}
+Reason: every forged ciphertext fails the HMAC check BEFORE padding is examined,
+so the oracle answers "invalid" no matter what and leaks nothing.
+(${s.detail})
+
+Live chat and file sharing use this Encrypt-then-MAC design, so this attack cannot work against them.`;
+            }
         }
+    ];
 
-        async function runTamperDemo() {
-            const out = document.getElementById('tamper-output');
-            out.innerText = "Simulating bit-flipping on ciphertext...";
-            const text = document.getElementById('tamper-input').value;
+    let current = 0;
 
-            const resp = await fetch('/api/attacks/tamper', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
-            });
-            const data = await resp.json();
+    function renderList() {
+        const list = document.getElementById('lab-list');
+        list.innerHTML = ATTACKS.map((a, i) => `
+            <button class="lab-item ${i === current ? 'active' : ''}" data-i="${i}" type="button">
+                <span class="lab-num">${i + 1}</span>
+                <span><span class="lab-name">${a.name}</span><br><span class="lab-kind">${a.kind}</span></span>
+            </button>`).join('');
+        list.querySelectorAll('.lab-item').forEach(b => b.addEventListener('click', () => select(Number(b.dataset.i))));
+    }
 
-            out.innerText = 
-`[*] Original Plaintext: "${data.plaintext}"
-[*] Authentic Ciphertext: ${data.authentic_packet.ciphertext.substring(0, 32)}...
-[*] Authentic HMAC Tag:   ${data.authentic_packet.hmac_tag.substring(0, 24)}...
-[✓] Original HMAC Check:  ${data.authentic_packet.hmac_verified ? 'PASSED' : 'FAILED'}
+    function select(i) {
+        current = i;
+        const a = ATTACKS[i];
+        renderList();
+        document.getElementById('lab-title').innerText = a.name;
+        document.getElementById('lab-kind').innerText = a.kind;
+        const badge = document.getElementById('lab-badge');
+        badge.className = 'badge ' + a.badge[0];
+        badge.innerText = a.badge[1];
+        document.getElementById('lab-desc').innerText = a.desc;
+        document.getElementById('lab-flow').innerText = a.flow;
+        const group = document.getElementById('lab-input-group');
+        group.style.display = a.label ? '' : 'none';
+        document.getElementById('lab-input-label').innerText = a.label || '';
+        const input = document.getElementById('lab-input');
+        input.value = a.value;
+        if (a.max) input.maxLength = a.max; else input.removeAttribute('maxlength');
+        document.getElementById('lab-status').innerText = 'Idle';
+        const out = document.getElementById('attack-output');
+        out.innerText = 'Select Run simulation to execute this scenario.';
+        out.className = 'attack-output';
+    }
 
-⚠️ ADVERSARY MODIFIES CIPHERTEXT:
-[-] Byte altered: ${data.tampered_packet.original_byte} ➔ ${data.tampered_packet.modified_byte}
-[-] Tampered Ciphertext: ${data.tampered_packet.tampered_ciphertext.substring(0, 32)}...
-[-] Expected HMAC:  ${data.tampered_packet.expected_tag_for_tampered.substring(0, 24)}...
-[-] Received Tag:   ${data.tampered_packet.received_tag.substring(0, 24)}...
-[❌] Recipient HMAC Check: ${data.tampered_packet.hmac_verified ? 'PASSED' : 'FAILED'}
-
-VERDICT: ${data.verdict}
-ACTION:  ${data.action}`;
+    document.getElementById('lab-run').addEventListener('click', async () => {
+        const a = ATTACKS[current];
+        const btn = document.getElementById('lab-run');
+        btn.disabled = true;
+        setOutput('Running…', '');
+        try {
+            setOutput(await a.run(document.getElementById('lab-input').value), 'ok');
+        } catch (e) {
+            setOutput('Simulation failed: ' + e.message, 'err');
+        } finally {
+            btn.disabled = false;
         }
+    });
 
-        async function runReplayDemo() {
-            const out = document.getElementById('replay-output');
-            out.innerText = "Testing anti-replay mechanism...";
-            const msgId = document.getElementById('replay-input').value;
-
-            const resp = await fetch('/api/attacks/replay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message_id: msgId, seq_no: 104 })
-            });
-            const data = await resp.json();
-
-            out.innerText = 
-`[*] Target Message ID: ${data.message_id} (Seq: #${data.seq_no})
-
-1. Legitimate Transmission (Alice ➔ Bob):
-   Status: ${data.first_transmission.status}
-   Is Replay: ${data.first_transmission.is_replay}
-   Result: ${data.first_transmission.result}
-
-2. Attacker Intercepts and Retransmits Same Packet:
-   Status: ${data['second_transmission (adversary replay)'].status}
-   Is Replay: ${data['second_transmission (adversary replay)'].is_replay}
-   Result: ${data['second_transmission (adversary replay)'].result}
-
-[✓] DEFENSE CONFIRMED: Nonce/Message-ID tracking prevents replay attacks!`;
-        }
-
-        async function runMitmDemo() {
-            const out = document.getElementById('mitm-output');
-            out.innerText = "Simulating Diffie-Hellman MITM scenario...";
-
-            const resp = await fetch('/api/attacks/mitm', { method: 'POST' });
-            const data = await resp.json();
-
-            out.innerText = 
-`SCENARIO 1: Unauthenticated Diffie-Hellman
----------------------------------------------
-Vulnerability: ${data.unauthenticated_dh.vulnerability}
-MITM Compromise: ${data.unauthenticated_dh.mitm_achieved ? 'SUCCEEDED (Adversary intercepted both)' : 'FAILED'}
-Analysis: ${data.unauthenticated_dh.explanation}
-
-SCENARIO 2: Authenticated DH with RSA Digital Signatures
----------------------------------------------------------
-Genuine Public Key + Signature Verified: ${data.authenticated_dh_with_rsa_signatures.genuine_packet_verified ? 'PASSED ✓' : 'FAILED'}
-Adversary Substituted Key Verified:      ${data.authenticated_dh_with_rsa_signatures.eve_tampered_packet_verified ? 'PASSED' : 'REJECTED ❌'}
-MITM Prevented: ${data.authenticated_dh_with_rsa_signatures.mitm_prevented ? 'YES ✓' : 'NO'}
-Defense: ${data.authenticated_dh_with_rsa_signatures.explanation}`;
-        }
-    </script>
+    select(0);
+</script>
 </body>
 </html>

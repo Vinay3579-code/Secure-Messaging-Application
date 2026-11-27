@@ -115,5 +115,11 @@ class TestAttackDefenses(unittest.TestCase):
         for field, value in row.items():
             self.assertNotIn(plaintext, str(value), f"Plaintext leaked in field '{field}'!")
 
+        # do not leave a fake message behind in the shared demo database
+        conn = get_db_connection()
+        conn.execute("DELETE FROM messages WHERE message_id = ?", (msg_id,))
+        conn.commit()
+        conn.close()
+
 if __name__ == "__main__":
     unittest.main()

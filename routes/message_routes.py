@@ -13,7 +13,8 @@ from database import (
     mark_messages_read,
     get_message_history,
     record_and_verify_replay,
-    get_db_connection
+    get_db_connection,
+    list_file_records
 )
 
 msg_bp = Blueprint('messages', __name__)
@@ -32,6 +33,10 @@ def send_message():
     timestamp = data.get('timestamp') or datetime.datetime.now(datetime.timezone.utc).isoformat()
     seq_no = data.get('seq_no', 1)
     message_id = data.get('message_id') or str(uuid.uuid4())
+    cipher_mode = data.get('cipher_mode') or 'cbc-hmac'
+
+    if cipher_mode != 'cbc-hmac':
+        return jsonify({"success": False, "error": "cipher_mode must be 'cbc-hmac' (CBC + HMAC-SHA256 is the only supported cipher)"}), 400
 
     if not receiver or not ciphertext or not iv or not hmac_tag:
         return jsonify({"success": False, "error": "Missing encrypted payload fields"}), 400
@@ -54,7 +59,8 @@ def send_message():
         iv=iv,
         hmac_tag=hmac_tag,
         timestamp=timestamp,
-        seq_no=seq_no
+        seq_no=seq_no,
+        cipher_mode=cipher_mode
     )
 
     return jsonify({
@@ -108,7 +114,7 @@ def server_relay_log():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT message_id, sender, receiver, ciphertext, iv, hmac_tag, timestamp, seq_no, created_at
+    SELECT message_id, sender, receiver, ciphertext, iv, hmac_tag, cipher_mode, timestamp, seq_no, created_at
     FROM messages ORDER BY id DESC LIMIT 50
     """)
     rows = cursor.fetchall()
@@ -117,5 +123,6 @@ def server_relay_log():
     return jsonify({
         "description": "Server-side relay log. Notice all messages are encrypted hex strings. Plaintext is inaccessible to server.",
         "count": len(rows),
-        "packets": [dict(r) for r in rows]
+        "packets": [dict(r) for r in rows],
+        "files": list_file_records()
     }), 200

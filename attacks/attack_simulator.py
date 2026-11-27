@@ -1,10 +1,11 @@
 """
 Interactive Attack Demonstration Engine (Terminal Runner)
-Simulates and explains the 4 core attacks for CNS Course viva & lab evaluation:
+Simulates and explains the 5 attacks for CNS Course viva & lab evaluation:
 1. Eavesdropping / Packet Sniffing (HTTP vs TLS + E2EE)
 2. Message Tampering & Bit Flipping (Caught by HMAC-SHA256)
 3. Replay Attack (Prevented by Sequence Nonces & Timestamps)
 4. Man-in-the-Middle Attack on Diffie-Hellman (Defeated by RSA Signatures)
+5. CBC Padding Oracle (Defeated by Encrypt-then-MAC / AES-GCM)
 """
 import sys
 import uuid
@@ -22,6 +23,7 @@ from crypto.kdf import derive_session_keys, get_key_fingerprint
 from crypto.encryption import encrypt_message, decrypt_message
 from crypto.integrity import calculate_hmac, verify_hmac
 from crypto.signatures import generate_identity_keypair, sign_data, verify_signature
+from crypto.padding_oracle import run_demo as run_padding_oracle_demo
 from database import init_db, record_and_verify_replay
 
 def print_banner(title):
@@ -149,6 +151,29 @@ def demo_4_mitm_attack():
         print("    [BLOCKED] Bob rejects Eve's substituted key: RSA Signature Verification Failed!")
         print("    [PASS] DEFENSE: MITM impossible without Alice's private signing key.")
 
+def demo_5_padding_oracle():
+    print_banner("ATTACK 5: CBC PADDING ORACLE (VAUDENAY) - DECRYPT WITHOUT THE KEY")
+    secret = "Meet at 5PM, vault code 4821"
+    print(f"[*] Victim message: '{secret}'")
+    result = run_padding_oracle_demo(secret)
+    v, d = result["vulnerable_cbc"], result["authenticated_design"]
+
+    print("\n[-] SCENARIO A: AES-CBC with NO integrity check (server leaks 'padding valid?')")
+    print(f"    Attacker never sees the key. Ciphertext: {v['ciphertext_hex'][:32]}... ({v['blocks']} blocks)")
+    print(f"    Oracle queries used: {v['oracle_queries']}")
+    print(f"    Recovered plaintext: '{v['recovered_plaintext']}'")
+    print("    [!] VULNERABILITY: full plaintext recovered byte-by-byte." if v["attack_succeeded"]
+          else "    [?] Attack did not succeed.")
+
+    print("\n[+] SCENARIO B: AES-CBC + HMAC Encrypt-then-MAC (our design)")
+    print(f"    Oracle queries before attacker gives up: {d['oracle_queries_before_giving_up']}")
+    if d["attack_defeated"]:
+        print("    [BLOCKED] HMAC is verified BEFORE padding is examined, so every forged query gets the")
+        print("              same 'invalid' answer and the oracle leaks nothing.")
+        print("    [PASS] DEFENSE: AES-256-GCM (Live Chat default) gives the same guarantee in one primitive.")
+    else:
+        print("    [FAIL] Vulnerability: attack succeeded against the authenticated design.")
+
 def run_all():
     print("\n======================================================================")
     print("     CNS PROJECT: HYBRID CRYPTOGRAPHY & SECURITY DEMONSTRATION")
@@ -157,8 +182,9 @@ def run_all():
     demo_2_message_tampering()
     demo_3_replay_attack()
     demo_4_mitm_attack()
+    demo_5_padding_oracle()
     print("\n======================================================================")
-    print("     ALL 4 ATTACK SCENARIOS EVALUATED SUCCESSFULLY!")
+    print("     ALL 5 ATTACK SCENARIOS EVALUATED SUCCESSFULLY!")
     print("======================================================================\n")
 
 if __name__ == "__main__":

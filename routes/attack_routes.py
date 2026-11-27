@@ -1,10 +1,11 @@
 """
 Attack Simulation & Educational Demonstrations
-Provides dedicated endpoints demonstrating the 4 core attacks:
+Provides dedicated endpoints demonstrating 5 attacks:
 1. Eavesdropping & Interception
 2. Message Tampering (Integrity violation)
 3. Replay Attack (Anti-replay violation)
 4. Man-in-the-Middle (Unauthenticated DH vs Authenticated DH)
+5. CBC Padding Oracle (unauthenticated CBC vs Encrypt-then-MAC)
 """
 import uuid
 import datetime
@@ -14,6 +15,7 @@ from crypto.kdf import derive_session_keys
 from crypto.encryption import encrypt_message, decrypt_message
 from crypto.integrity import calculate_hmac, verify_hmac
 from crypto.signatures import generate_identity_keypair, sign_data, verify_signature
+from crypto.padding_oracle import run_demo as run_padding_oracle_demo
 
 attack_bp = Blueprint('attacks', __name__)
 
@@ -184,3 +186,13 @@ def demo_mitm():
             "explanation": "Eve cannot forge Alice's RSA digital signature on the DH public value without Alice's private key. MITM fails!"
         }
     }), 200
+
+@attack_bp.route('/api/attacks/padding-oracle', methods=['POST'])
+def demo_padding_oracle():
+    """
+    Runs a real Vaudenay padding-oracle attack that decrypts an AES-CBC ciphertext without the key,
+    then repeats it against our Encrypt-then-MAC design, where it fails.
+    """
+    data = request.get_json() or {}
+    message = str(data.get('message') or 'Meet at 5PM, code 4821')[:48]
+    return jsonify(run_padding_oracle_demo(message)), 200

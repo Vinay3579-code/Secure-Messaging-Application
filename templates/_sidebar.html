@@ -1,0 +1,48 @@
+{% include '_icons.html' %}
+<aside class="nav">
+    <div class="nav-brand">
+        <div class="brand-mark"><svg class="ic"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="brand-name">SecureMsg</div>
+            <div class="brand-sub">Hybrid cryptography console</div>
+        </div>
+    </div>
+
+    <nav class="nav-groups">
+        <div class="nav-label">Workspace</div>
+        <a href="/chat" class="nav-link {{ 'active' if active == 'chat' }}"><svg class="ic"><use href="#i-chat"/></svg>Live chat</a>
+        <a href="/attacks" class="nav-link {{ 'active' if active == 'attacks' }}"><svg class="ic"><use href="#i-zap"/></svg>Attack lab</a>
+        <div class="nav-label">Account and transport</div>
+        <a href="/login" class="nav-link {{ 'active' if active == 'login' }}"><svg class="ic"><use href="#i-user"/></svg>Account</a>
+        <a href="https://localhost:5443" target="_blank" rel="noopener" class="nav-link"><svg class="ic"><use href="#i-lock"/></svg>HTTPS / TLS mode<svg class="ic ic-sm" style="margin-left:auto;opacity:.5"><use href="#i-external"/></svg></a>
+    </nav>
+
+    <div class="nav-foot">
+        <div class="user-card">
+            <div class="avatar" id="nav-avatar">?</div>
+            <div>
+                <div class="user-name" id="display-username">Not signed in</div>
+                <div class="user-role">End-to-end encrypted</div>
+            </div>
+            <button id="btn-logout" class="icon-btn" type="button" title="Sign out" aria-label="Sign out"><svg class="ic ic-sm"><use href="#i-logout"/></svg></button>
+        </div>
+        <div class="status-line"><span class="dot"></span>Relay server online</div>
+    </div>
+</aside>
+<script>
+    (function () {
+        // Fill the account card. On /chat with ?user=x the chat script sets the name itself.
+        var name = document.getElementById('display-username');
+        var av = document.getElementById('nav-avatar');
+        fetch('/api/auth/me').then(function (r) { return r.json(); }).then(function (d) {
+            if (d.logged_in && name.textContent === 'Not signed in') { name.textContent = d.username; }
+            av.textContent = (name.textContent && name.textContent !== 'Not signed in' ? name.textContent : '?').charAt(0);
+        }).catch(function () {});
+        var out = document.getElementById('btn-logout');
+        if (out && !window.SecureCryptoClient) {
+            out.addEventListener('click', function () {
+                fetch('/api/auth/logout', { method: 'POST' }).then(function () { window.location.href = '/login'; });
+            });
+        }
+    })();
+</script>

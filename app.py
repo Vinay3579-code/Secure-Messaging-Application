@@ -10,13 +10,14 @@ from pathlib import Path
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, jsonify
 
 from database import init_db
 from routes.auth_routes import auth_bp
 from routes.dh_routes import dh_bp
 from routes.message_routes import msg_bp
 from routes.attack_routes import attack_bp
+from routes.file_routes import file_bp
 from generate_cert import generate_self_signed_cert
 
 app = Flask(__name__)
@@ -27,11 +28,19 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(dh_bp)
 app.register_blueprint(msg_bp)
 app.register_blueprint(attack_bp)
+app.register_blueprint(file_bp)
+
+# Largest request body the relay accepts: an encrypted file plus headroom (see crypto/filecrypt.py)
+app.config['MAX_CONTENT_LENGTH'] = 11 * 1024 * 1024
+
+@app.errorhandler(413)
+def too_large(_):
+    return jsonify({"success": False, "error": "FILE_TOO_LARGE"}), 413
 
 # Page Routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return redirect(url_for('chat_page'))
 
 @app.route('/login')
 def login_page():

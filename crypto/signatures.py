@@ -6,6 +6,22 @@ attacks during Diffie-Hellman public key exchange.
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes, serialization
 
+def dh_signed_payload(role: str, initiator: str, responder: str, pub_hex: str) -> str:
+    """
+    Canonical string signed for a DH public value (must match static/js/crypto_client.js).
+    Binds the value to its role (A/B), both identities and the direction of the handshake, so a
+    signature on Alice's A cannot be replayed as a different value, role, or peer pairing.
+    """
+    return f"cns-dh-v2|{role}|{initiator}|{responder}|{format(int(pub_hex, 16), 'x')}"
+
+def load_public_key_pem(public_key_pem: str) -> bool:
+    """Returns True if the string is a valid RSA public key PEM."""
+    try:
+        key = serialization.load_pem_public_key(public_key_pem.encode('utf-8'))
+        return isinstance(key, rsa.RSAPublicKey)
+    except Exception:
+        return False
+
 def generate_identity_keypair() -> tuple[str, str]:
     """
     Generates a long-term RSA-2048 keypair for a user.

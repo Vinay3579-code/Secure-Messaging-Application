@@ -3,196 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure E2EE Chat - CNS Project</title>
+    <title>Live chat | SecureMsg Console</title>
+    <meta name="description" content="End-to-end encrypted chat with a live crypto inspector: signed Diffie-Hellman, per-message key ratchet, CBC + HMAC-SHA256">
     <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        body.is-embedded nav.navbar {
-            display: none !important;
-        }
-        body.is-embedded {
-            height: 100vh !important;
-            overflow: hidden !important;
-        }
-        body.is-embedded .chat-layout-wrapper {
-            height: 100vh !important;
-            padding: 0.5rem !important;
-        }
-    </style>
     <script>
         if (window.self !== window.top || new URLSearchParams(window.location.search).get('embedded') === '1') {
             document.documentElement.classList.add('is-embedded');
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.classList.add('is-embedded');
-            });
+            document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('is-embedded'); });
         }
     </script>
 </head>
-<body style="height: 100vh; display: flex; flex-direction: column;">
-    <nav class="navbar">
-        <a href="/" class="brand">
-            <span>🛡️ CNS Secure Messaging</span>
-            <span class="brand-badge">E2EE Prototype</span>
-        </a>
-        <div class="nav-links">
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Signed in as: <strong id="display-username" style="color: var(--accent);">-</strong></span>
-            <a href="/" class="nav-link">Home</a>
-            <a href="/attacks" class="nav-link">Attack</a>
-            <button id="btn-inspect-server" class="nav-btn" onclick="openServerLogModal()" style="background-color: var(--bg-card); color: var(--accent); border: 1px solid var(--accent);">Inspect Relay DB</button>
-            <button id="btn-logout" class="nav-btn" style="background-color: var(--danger); color: #fff;">Logout</button>
-        </div>
-    </nav>
+<body>
+<div class="shell">
+    {% set active = 'chat' %}
+    {% include '_sidebar.html' %}
 
-    <div class="chat-layout-wrapper" style="flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 0.75rem; padding: 0.75rem; overflow: hidden;">
-        <!-- Left: Chat Interface -->
-        <div class="chat-window">
-            <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding: 0.65rem 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Peer:</label>
-                    <select id="peer-select" class="form-input" style="width: auto; min-width: 140px; padding: 0.4rem 0.75rem; font-size: 0.85rem; font-weight: 600;">
-                        <option value="">Loading peers...</option>
-                    </select>
-                    <button id="btn-start-dh" class="btn btn-primary" type="button" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 1.1rem; font-size: 0.85rem; font-weight: 700; background: linear-gradient(135deg, #0284c7, #38bdf8); color: #0f172a; border: 1px solid #7dd3fc; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                        🤝 Start Secure Handshake (DH)
-                    </button>
-                    <button id="btn-reset-chat" class="btn btn-secondary" type="button" style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.85rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer;">
-                        🔄 Reset
-                    </button>
-                </div>
-                <div>
-                    <span id="session-badge" class="badge badge-warning" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">No Secure Session Established</span>
+    <div class="content">
+        <header class="topbar">
+            <div>
+                <div class="crumbs">Workspace / Live chat</div>
+                <h1>Live chat</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="demo-switch" title="Open a separate tab as a demo user">Demo users
+                    <a href="/chat?user=alice&peer=bob" target="_blank" rel="noopener"><span class="mini-avatar a">A</span>Alice</a>
+                    <a href="/chat?user=bob&peer=alice" target="_blank" rel="noopener"><span class="mini-avatar b">B</span>Bob</a>
                 </div>
             </div>
+        </header>
 
-            <!-- Message Area -->
-            <div id="messages-container" class="chat-messages">
-                <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem;">
-                    Select a peer above and click <strong>"Start Secure Handshake (DH)"</strong> to establish 256-bit symmetric session keys.
-                </div>
-            </div>
+        <main class="page">
+            <!-- Messenger: contacts | conversation | profile and actions -->
+            <section class="card messenger">
 
-            <!-- Handshake Pipeline Progress Drawer -->
-            <div id="dh-pipeline-log" style="background-color: var(--code-bg); border-top: 1px solid var(--border); padding: 0.4rem 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: #38bdf8; max-height: 65px; overflow-y: auto;">
-                <span style="color: var(--text-muted);">Ready. Messages sent across this channel are encrypted using AES-256-CBC and authenticated with HMAC-SHA256.</span>
-            </div>
+                <!-- Contacts and profile selection -->
+                <aside class="pane-col contacts">
+                    <div class="contacts-head">
+                        <input type="search" id="contact-search" class="form-input" placeholder="Search profiles" autocomplete="off">
+                    </div>
+                    <div class="col-title" style="padding-bottom:.2rem;">Profiles</div>
+                    <div id="contact-list" class="contact-list"></div>
+                </aside>
 
-            <!-- Input Form -->
-            <div class="chat-input-area">
-                <form id="chat-form" style="display: flex; gap: 0.75rem; width: 100%; align-items: center;">
-                    <input type="text" id="message-input" class="chat-input" placeholder="Type confidential message..." autocomplete="off">
-                    <button type="submit" class="btn btn-primary">Send 🔒</button>
-                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: #f87171; cursor: pointer; white-space: nowrap;">
-                        <input type="checkbox" id="tamper-checkbox">
-                        Simulate Tamper
-                    </label>
-                </form>
-            </div>
-        </div>
-
-        <!-- Right: Cryptographic Inspector Panel -->
-        <div style="background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem; display: flex; flex-direction: column; overflow-y: auto;">
-            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
-                <span>🔬 Live Crypto Inspector</span>
-                <span class="badge badge-info">RFC 3526 / AES / HMAC</span>
-            </h3>
-
-            <!-- Mathematical Parameters -->
-            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 0.2rem;">KEY EXCHANGE (Diffie-Hellman 2048-bit)</div>
-            <div class="inspector-panel">
-                <div class="inspector-row"><span class="inspector-label">Client User:</span><span id="insp-user" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Remote Peer:</span><span id="insp-peer" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Prime (p):</span><span id="insp-p" class="inspector-value" title="RFC 3526 2048-bit MODP Prime">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Generator (g):</span><span id="insp-g" class="inspector-value">2</span></div>
-                <div class="inspector-row"><span class="inspector-label">My Public Key:</span><span id="insp-my-pub" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Peer Public Key:</span><span id="insp-peer-pub" class="inspector-value">-</span></div>
-            </div>
-
-            <!-- Derived Symmetric Keys -->
-            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 0.5rem;">DERIVED SESSION KEYS (HKDF-SHA256)</div>
-            <div class="inspector-panel">
-                <div class="inspector-row"><span class="inspector-label">Shared Secret FP:</span><span id="insp-secret-fp" class="inspector-value secret">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">AES-256 Key FP:</span><span id="insp-aes-fp" class="inspector-value secret">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">HMAC Key FP:</span><span id="insp-hmac-fp" class="inspector-value secret">-</span></div>
-            </div>
-
-            <!-- Last Transmission Packet -->
-            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 0.5rem;">LAST PACKET IN TRANSIT</div>
-            <div class="inspector-panel">
-                <div class="inspector-row"><span class="inspector-label">Random IV (16B):</span><span id="insp-last-iv" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Ciphertext (Hex):</span><span id="insp-last-c" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">HMAC-SHA256 Tag:</span><span id="insp-last-hmac" class="inspector-value">-</span></div>
-                <div class="inspector-row"><span class="inspector-label">Status:</span><span id="insp-last-status" class="inspector-value">-</span></div>
-            </div>
-
-            <div style="margin-top: auto; padding-top: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
-                💡 <strong>Security Guarantee:</strong> The server only routes the encrypted hex ciphertext and HMAC tag. Decryption happens purely inside the browser client memory.
-            </div>
-        </div>
-    </div>
-
-    <!-- Server Database Inspection Modal -->
-    <div id="server-log-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; align-items: center; justify-content: center; padding: 2rem;">
-        <div style="background-color: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 900px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;">
-            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.1rem; font-weight: 700;">📡 Relay Server Database Content (Zero-Plaintext Verification)</h3>
-                <button class="btn btn-secondary" onclick="closeServerLogModal()" style="padding: 0.3rem 0.7rem;">✕ Close</button>
-            </div>
-            <div style="padding: 1rem 1.5rem; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem;">
-                <p style="color: var(--text-muted); margin-bottom: 1rem;">
-                    This view displays the raw rows from SQLite <code>messages</code> table. Notice that the server stores <strong>ONLY ciphertext, IV, HMAC tag, and metadata</strong>. No plaintext messages or symmetric keys exist anywhere in the server database!
-                </p>
-                <div id="server-db-rows" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    Loading server database...
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/js/crypto_client.js"></script>
-    <script src="/static/js/chat.js"></script>
-    <script>
-        async function openServerLogModal() {
-            document.getElementById('server-log-modal').style.display = 'flex';
-            const container = document.getElementById('server-db-rows');
-            container.innerHTML = '<span style="color: var(--accent);">Fetching raw server database records...</span>';
-            
-            try {
-                const resp = await fetch('/api/server/relay-log', {
-                    headers: typeof getHeaders === 'function' ? getHeaders() : { 'Content-Type': 'application/json' }
-                });
-                const data = await resp.json();
-                if (data.packets.length === 0) {
-                    container.innerHTML = '<span style="color: var(--text-muted);">No messages relayed yet. Send a message to inspect its encrypted format!</span>';
-                    return;
-                }
-                
-                container.innerHTML = '';
-                data.packets.forEach(p => {
-                    const box = document.createElement('div');
-                    box.style.backgroundColor = 'var(--code-bg)';
-                    box.style.border = '1px solid var(--border)';
-                    box.style.borderRadius = '6px';
-                    box.style.padding = '0.75rem';
-                    box.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; color: var(--accent); margin-bottom: 0.3rem;">
-                            <span>ID: ${p.message_id} (Seq: #${p.seq_no})</span>
-                            <span>${p.sender} ➔ ${p.receiver} | ${p.created_at}</span>
+                <!-- Conversation -->
+                <div class="pane-col convo" id="convo">
+                    <div class="drop-overlay">Drop to encrypt and send</div>
+                    <div class="convo-head">
+                        <div class="avatar md" id="chat-peer-avatar">?</div>
+                        <div class="convo-who">
+                            <div class="convo-name" id="chat-peer-name">No peer selected</div>
+                            <div class="convo-sub" id="chat-peer-sub">choose a profile to start</div>
                         </div>
-                        <div style="color: #cbd5e1; word-break: break-all;">
-                            <strong>Ciphertext (AES-256):</strong> ${p.ciphertext}<br>
-                            <strong>IV:</strong> ${p.iv}<br>
-                            <strong>HMAC Tag:</strong> ${p.hmac_tag}
-                        </div>
-                    `;
-                    container.appendChild(box);
-                });
-            } catch (err) {
-                container.innerHTML = '<span style="color: #ef4444;">Failed to fetch server relay logs</span>';
-            }
-        }
+                        <span id="session-badge" class="badge badge-warning">No secure session</span>
+                    </div>
 
-        function closeServerLogModal() {
-            document.getElementById('server-log-modal').style.display = 'none';
-        }
-    </script>
+                    <div id="session-cta" class="cta-bar" hidden>
+                        <svg class="ic ic-sm"><use href="#i-shield"/></svg>
+                        <span class="cta-text" id="session-cta-text">This conversation is not secured yet.</span>
+                        <button class="btn btn-sm" id="cta-handshake" type="button">Secure it now</button>
+                    </div>
+
+                    <div id="messages-container" class="chat-messages">
+                        <div class="chat-empty-state">
+                            <div class="empty-title">No secure session yet</div>
+                            Pick a profile on the left, then secure the conversation to run the signed Diffie-Hellman exchange.
+                        </div>
+                    </div>
+
+                    <div id="dh-pipeline-log" class="log-strip">
+                        <span class="log-idle">Ready. Each message uses a fresh one-time key from a forward-secret ratchet.</span>
+                    </div>
+
+                    <form id="chat-form" class="composer">
+                        <button type="button" id="btn-attach" class="icon-btn" title="Send an encrypted file (max 10 MB)" aria-label="Attach file"><svg class="ic ic-sm"><use href="#i-paperclip"/></svg></button>
+                        <input type="file" id="file-input" hidden multiple>
+                        <input type="text" id="message-input" class="chat-input" placeholder="Write a confidential message" autocomplete="off">
+                        <button type="submit" class="icon-btn send" title="Send encrypted message" aria-label="Send"><svg class="ic"><use href="#i-send"/></svg></button>
+                    </form>
+                </div>
+
+                <!-- Profile, encryption and actions -->
+                <aside class="pane-col profile">
+                    <div id="profile-empty" class="profile-empty">Select a profile to see details and secure actions.</div>
+                    <div id="profile-body" hidden>
+                        <div class="profile-hero">
+                            <div class="avatar lg" id="profile-avatar">?</div>
+                            <div class="profile-name" id="profile-name">-</div>
+                            <div class="profile-since" id="profile-since"></div>
+                        </div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Identity key fingerprint</div>
+                            <div class="fp-box" id="profile-fp">-</div>
+                        </div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Encryption</div>
+                            <div class="fp-box" style="font-family:var(--font-sans); font-size:13px;">CBC + HMAC-SHA256 (Encrypt-then-MAC), one-time key per message</div>
+                        </div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Actions</div>
+                            <button id="btn-start-dh" class="action-tile" type="button">
+                                <span class="tile-ic"><svg class="ic ic-sm"><use href="#i-handshake"/></svg></span>
+                                <span><span class="tile-title">Start secure handshake</span><span class="tile-sub">Signed DH-2048 key exchange</span></span>
+                                <svg class="ic ic-sm tile-go"><use href="#i-play"/></svg>
+                            </button>
+                            <button id="btn-reset-chat" class="action-tile warn" type="button">
+                                <span class="tile-ic"><svg class="ic ic-sm"><use href="#i-refresh"/></svg></span>
+                                <span><span class="tile-title">Reset conversation</span><span class="tile-sub">Clear messages and keys</span></span>
+                            </button>
+                        </div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Attack simulation</div>
+                            <label class="switch-row">
+                                <span><span class="sr-title">Tamper with next messages</span><span class="sr-sub" style="display:block">Corrupts a message (or an uploaded file) so the receiver's integrity check rejects it.</span></span>
+                                <span class="switch"><input type="checkbox" id="tamper-checkbox"><span class="slider"></span></span>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+
+            <!-- Crypto Inspector dock -->
+            <section id="inspector" class="card inspector"></section>
+        </main>
+    </div>
+</div>
+
+<script src="/static/js/crypto_client.js"></script>
+<script src="/static/js/chat.js"></script>
+<script src="/static/js/inspector.js"></script>
+<script>
+    if (window.self === window.top) {
+        window.cnsInspector = new CryptoInspector(document.getElementById('inspector'), [
+            { name: function (ctx) { return (ctx && ctx.user) || 'You'; }, cls: 'alice', ctx: function () { return window.__cns; } }
+        ]);
+    }
+</script>
 </body>
 </html>

@@ -4,9 +4,9 @@ Handles user registration, PBKDF2 password verification, session management,
 and RSA identity key distribution.
 """
 from flask import Blueprint, request, jsonify, session
-from database import create_user, get_user_by_username, get_all_users
+from database import create_user, get_user_by_username, get_all_users, update_user_identity_key
 from crypto.auth import hash_password, verify_password
-from crypto.signatures import generate_identity_keypair
+from crypto.signatures import load_public_key_pem
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -29,8 +29,11 @@ def register():
     # 1. Hash password with PBKDF2-HMAC-SHA256 and unique salt
     pwd_hash, salt = hash_password(password)
 
-    # 2. Generate long-term RSA-2048 identity keypair for digital signatures (anti-MITM)
-    private_key_pem, public_key_pem = generate_identity_keypair()
+    # 2. The RSA-2048 identity keypair is generated in the user's browser; only the PUBLIC key is
+    #    uploaded. The server never sees or returns a private identity key.
+    public_key_pem = data.get('public_identity_key')
+    if public_key_pem is not None and not load_public_key_pem(public_key_pem):
+        return jsonify({"success": False, "error": "public_identity_key is not a valid RSA public key PEM"}), 400
 
     # 3. Store user in database
     created = create_user(username, pwd_hash, salt, public_key_pem)
@@ -44,7 +47,6 @@ def register():
         "success": True,
         "username": username,
         "public_identity_key": public_key_pem,
-        "private_identity_key": private_key_pem,
         "message": "User registered successfully with PBKDF2-HMAC-SHA256 password protection."
     }), 201
 
@@ -73,6 +75,26 @@ def login():
         "public_identity_key": user['public_identity_key'],
         "message": "Authentication successful."
     }), 200
+
+@auth_bp.route('/api/auth/identity', methods=['POST'])
+def set_identity_key():
+    """
+    Publishes (or rotates) the user's RSA public identity key. Re-authenticates with the password so the
+    key cannot be swapped by anyone who merely holds a session cookie or spoofs a header.
+    """
+    data = request.get_json() or {}
+    username = (data.get('username') or '').strip().lower()
+    password = data.get('password') or ''
+    public_key_pem = data.get('public_identity_key')
+
+    user = get_user_by_username(username) if username else None
+    if not user or not verify_password(password, user['password_hash'], user['salt']):
+        return jsonify({"success": False, "error": "Invalid username or password"}), 401
+    if not public_key_pem or not load_public_key_pem(public_key_pem):
+        return jsonify({"success": False, "error": "public_identity_key is not a valid RSA public key PEM"}), 400
+
+    update_user_identity_key(username, public_key_pem)
+    return jsonify({"success": True, "message": "Identity public key published."}), 200
 
 @auth_bp.route('/api/auth/logout', methods=['POST'])
 def logout():
