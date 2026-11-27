@@ -1198,10 +1198,10 @@ python -m unittest discover -s tests</pre>
   /* ==================== 9. TEAM ==================== */
   team() {
     const members = [
-      { initials: 'AS', name: 'Anusha Shigihalli', roll: '402', usn: '01FE23BCS044' },
-      { initials: 'AH', name: 'Ananya Hiregoudar', roll: '443', usn: '01FE23BCS104' },
-      { initials: 'AT', name: 'Amogh Talawar',     roll: '464', usn: '01FE24BCS414' },
-      { initials: 'VM', name: 'Vinay Madgi',       roll: '433', usn: '01FE23BCS306' },
+      { initials: 'AS', name: 'Anusha Shigihalli', roll: '402', usn: '01FE23BCS044', photo: './team/anusha.png', pos: '50% 12%' },
+      { initials: 'AH', name: 'Ananya Hiregoudar', roll: '443', usn: '01FE23BCS104', photo: './team/ananya.png', pos: '50% 22%' },
+      { initials: 'AT', name: 'Amogh Talawar',     roll: '464', usn: '01FE24BCS414', photo: './team/amogh.png',  pos: '50% 15%' },
+      { initials: 'VM', name: 'Vinay Madgi',       roll: '433', usn: '01FE23BCS306', photo: './team/vinay.png',  pos: '50% 50%' },
     ];
 
     return `
@@ -1230,10 +1230,13 @@ python -m unittest discover -s tests</pre>
               <span class="pill teal">TEAM 04</span>
             </div>
             <div class="member-body">
-              <span class="avatar" aria-hidden="true">${m.initials}</span>
-              <div>
-                <h2 class="font-display" style="font-size:1.18rem;line-height:1.25;">${m.name}</h2>
-                <p style="font-size:12.6px;color:var(--ink-3);margin-top:2px;">Computer Science &amp; Engineering</p>
+              <div class="member-photo-wrap">
+                <img class="member-photo" src="${m.photo}" alt="${m.name}" style="object-position:${m.pos};" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';" />
+                <span class="avatar member-photo-fallback" aria-hidden="true">${m.initials}</span>
+              </div>
+              <div class="member-info">
+                <h2 class="font-display member-name">${m.name}</h2>
+                <p class="member-dept">Computer Science &amp; Engineering</p>
               </div>
             </div>
             <div class="member-data">
