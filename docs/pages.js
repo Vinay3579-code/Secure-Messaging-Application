@@ -276,9 +276,9 @@ window.PORTFOLIO_PAGES = {
               </div>
             </div>
 
-            <aside class="topo-widget" aria-label="Live Topology Preview and Packet Inspector">
+            <aside class="topo-widget" aria-label="Topology Preview and Packet Inspector">
               <div class="topo-head">
-                <span class="topo-title"><span class="live-dot"></span>Live Topology Preview</span>
+                <span class="topo-title"><span class="live-dot"></span>Topology Preview</span>
                 <span class="topo-port">HTTP :5000 · TLS :5443</span>
               </div>
 
