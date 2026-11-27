@@ -836,6 +836,14 @@ window.PORTFOLIO_PAGES = {
           <button type="button" class="btn btn-dark btn-sm" id="btn-demo-send" disabled>2. Encrypt &amp; Relay →</button>
         </div>
 
+        <!-- Step-by-Step Live Execution Animator -->
+        <div class="stage-card" style="margin-bottom:16px;">
+          <div class="stage-canvas" id="demo-live-canvas" style="padding:12px 16px;"></div>
+          <div class="stage-ticker">
+            <div><span class="ticker-badge" id="demo-live-badge">READY</span><span id="demo-live-caption">Click "1. Generate RSA-2048 &amp; Run Signed DH Handshake" to watch every step animate live.</span></div>
+          </div>
+        </div>
+
         <div class="sim-grid">
           <div class="sim-pane">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -884,6 +892,14 @@ window.PORTFOLIO_PAGES = {
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
           <input type="text" id="attack-msg-input" class="sim-input" style="flex:1 1 260px;" value="Vault code 4821" />
           <button type="button" class="btn btn-danger" id="btn-run-attack">▶ Execute Live Attack</button>
+        </div>
+
+        <!-- Live Attack-vs-Defense Visualizer -->
+        <div class="stage-card" style="margin-bottom:14px;">
+          <div class="stage-canvas" id="attack-visual-canvas" style="padding:12px 16px;"></div>
+          <div class="stage-ticker">
+            <div><span class="ticker-badge warn" id="attack-visual-badge">IDLE</span><span id="attack-visual-caption">Pick any attack above and click "Execute Live Attack" to animate the exploit and defense.</span></div>
+          </div>
         </div>
 
         <div class="sim-log" id="attack-lab-output" style="max-height:340px;">Select any scenario above and click "Execute Live Attack" to run real WebCrypto operations in your browser.</div>

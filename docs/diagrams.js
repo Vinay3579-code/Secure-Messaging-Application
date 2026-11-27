@@ -533,11 +533,271 @@ window.PORTFOLIO_DIAGRAMS = (() => {
     </svg>`
   };
 
+  /* =====================================================================
+     6. DEMO TAB: STEP-BY-STEP LIVE EXECUTION STAGE (Alice <-> Relay <-> Bob)
+     frame: { phase, aliceSub, relaySub, bobSub, pillLabel, pillColor,
+              wireDir ('a2r'|'r2b'|'b2r'|'r2a'|'none'), alertNode,
+              stepNum, totalSteps, badge, badgeCls, caption, tamperMid }
+     ===================================================================== */
+  function escSvg(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderDemoLiveStage(frame = {}) {
+    const f = {
+      aliceTitle: frame.aliceTitle || 'Alice Browser',
+      aliceSub: frame.aliceSub || 'Waiting for RSA-2048 & DH',
+      aliceState: frame.aliceState || 'idle', // idle | active | ok | err
+      relayTitle: frame.relayTitle || 'Untrusted Relay',
+      relaySub: frame.relaySub || '0 Plaintext · 0 Private Keys',
+      relayState: frame.relayState || 'idle',
+      bobTitle: frame.bobTitle || 'Bob Browser',
+      bobSub: frame.bobSub || 'Waiting for signed handshake',
+      bobState: frame.bobState || 'idle',
+      wireDir: frame.wireDir || 'none', // a2r | r2b | b2r | r2a | both_in | replay_bounce | none
+      pillLabel: frame.pillLabel || '',
+      pillColor: frame.pillColor || '#38BDF8',
+      tamperMid: !!frame.tamperMid,
+      stepNum: frame.stepNum || 0,
+      totalSteps: frame.totalSteps || 0
+    };
+
+    const borderFor = (st, def) =>
+      st === 'active' ? '#60A5FA' : st === 'ok' ? '#34D399' : st === 'err' ? '#F87171' : st === 'warn' ? '#FBBF24' : def;
+    const clsFor = (st) => (st === 'active' || st === 'err' ? 'pulse-ring' : '');
+
+    let packetSvg = '';
+    if (f.wireDir === 'a2r') {
+      packetSvg = `<g><rect x="-54" y="-13" width="108" height="26" rx="13" fill="#0B1320" stroke="${f.pillColor}" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="${f.pillColor}" font-family="JetBrains Mono, monospace" font-size="9.8" font-weight="700">${escSvg(f.pillLabel)}</text><animateMotion dur="0.9s" repeatCount="indefinite" path="M 278 104 L 382 104"/></g>`;
+    } else if (f.wireDir === 'r2b') {
+      packetSvg = `<g><rect x="-54" y="-13" width="108" height="26" rx="13" fill="#0B1320" stroke="${f.pillColor}" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="${f.pillColor}" font-family="JetBrains Mono, monospace" font-size="9.8" font-weight="700">${escSvg(f.pillLabel)}</text><animateMotion dur="0.9s" repeatCount="indefinite" path="M 608 104 L 712 104"/></g>`;
+    } else if (f.wireDir === 'b2r') {
+      packetSvg = `<g><rect x="-54" y="-13" width="108" height="26" rx="13" fill="#0B1320" stroke="${f.pillColor}" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="${f.pillColor}" font-family="JetBrains Mono, monospace" font-size="9.8" font-weight="700">${escSvg(f.pillLabel)}</text><animateMotion dur="0.9s" repeatCount="indefinite" path="M 712 104 L 608 104"/></g>`;
+    } else if (f.wireDir === 'r2a') {
+      packetSvg = `<g><rect x="-54" y="-13" width="108" height="26" rx="13" fill="#0B1320" stroke="${f.pillColor}" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="${f.pillColor}" font-family="JetBrains Mono, monospace" font-size="9.8" font-weight="700">${escSvg(f.pillLabel)}</text><animateMotion dur="0.9s" repeatCount="indefinite" path="M 382 104 L 278 104"/></g>`;
+    } else if (f.wireDir === 'replay_bounce') {
+      packetSvg = `<g><rect x="-52" y="-13" width="104" height="26" rx="13" fill="#2A0B12" stroke="#F87171" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.6" font-weight="700">${escSvg(f.pillLabel)}</text><animateMotion dur="1.0s" repeatCount="indefinite" path="M 278 104 L 382 104 L 278 104"/></g>`;
+    }
+
+    const leftActive = f.wireDir === 'a2r' || f.wireDir === 'r2a' || f.wireDir === 'replay_bounce';
+    const rightActive = f.wireDir === 'r2b' || f.wireDir === 'b2r';
+    const leftCol = leftActive ? f.pillColor : '#263449';
+    const rightCol = rightActive ? f.pillColor : '#263449';
+
+    // Step progress dots at top
+    let dotsSvg = '';
+    if (f.totalSteps > 0) {
+      const startX = 495 - ((f.totalSteps - 1) * 34) / 2;
+      for (let i = 1; i <= f.totalSteps; i++) {
+        const cx = startX + (i - 1) * 34;
+        const done = i < f.stepNum;
+        const cur = i === f.stepNum;
+        dotsSvg += `<circle cx="${cx}" cy="20" r="${cur ? 6 : 4.5}" fill="${cur ? f.pillColor : done ? '#34D399' : '#263449'}"/>`;
+        if (i < f.totalSteps) {
+          dotsSvg += `<line x1="${cx + 7}" y1="20" x2="${cx + 27}" y2="20" stroke="${done ? '#34D399' : '#263449'}" stroke-width="2"/>`;
+        }
+      }
+    }
+
+    return `<svg viewBox="0 0 990 198" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live WebCrypto step-by-step execution visualizer">
+      ${dotsSvg}
+
+      <!-- Alice Node -->
+      <rect x="18" y="42" width="256" height="128" rx="12" fill="#0F172A" stroke="${borderFor(f.aliceState, '#334155')}" stroke-width="${f.aliceState !== 'idle' ? '2.4' : '1.4'}" class="${clsFor(f.aliceState)}"/>
+      <rect x="18" y="42" width="256" height="34" rx="12" fill="#172554"/><rect x="18" y="62" width="256" height="14" fill="#172554"/>
+      <text x="146" y="64" text-anchor="middle" fill="#EFF6FF" font-family="Plus Jakarta Sans, sans-serif" font-size="13" font-weight="700">${escSvg(f.aliceTitle)}</text>
+      <text x="146" y="106" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="600">${escSvg(f.aliceSub.slice(0, 34))}</text>
+      <text x="146" y="126" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.5">${escSvg(f.aliceSub.slice(34, 72))}</text>
+      <text x="146" y="152" text-anchor="middle" fill="${f.aliceState === 'ok' ? '#34D399' : f.aliceState === 'active' ? '#60A5FA' : '#64748B'}" font-family="JetBrains Mono, monospace" font-size="9.2" font-weight="700">${f.aliceState === 'ok' ? '● READY / SEALED' : f.aliceState === 'active' ? '● COMPUTING...' : '○ IDLE'}</text>
+
+      <!-- Left Wire -->
+      <line x1="274" y1="104" x2="386" y2="104" stroke="${leftCol}" stroke-width="${leftActive ? '2.8' : '1.6'}" class="${leftActive ? (f.wireDir === 'r2a' ? 'wire-flow-rev' : 'wire-flow') : ''}"/>
+      ${f.tamperMid ? `
+        <rect x="292" y="126" width="76" height="24" rx="6" fill="#450A0A" stroke="#F87171"/>
+        <text x="330" y="142" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700">⚡ BIT FLIP!</text>
+      ` : ''}
+
+      <!-- Relay Node -->
+      <rect x="386" y="42" width="218" height="128" rx="12" fill="#111827" stroke="${borderFor(f.relayState, '#334155')}" stroke-width="${f.relayState !== 'idle' ? '2.4' : '1.4'}" class="${clsFor(f.relayState)}"/>
+      <rect x="386" y="42" width="218" height="34" rx="12" fill="${f.relayState === 'err' ? '#450A0A' : '#3B2305'}"/><rect x="386" y="62" width="218" height="14" fill="${f.relayState === 'err' ? '#450A0A' : '#3B2305'}"/>
+      <text x="495" y="64" text-anchor="middle" fill="${f.relayState === 'err' ? '#FECACA' : '#FEF3C7'}" font-family="Plus Jakarta Sans, sans-serif" font-size="13" font-weight="700">${escSvg(f.relayTitle)}</text>
+      <text x="495" y="106" text-anchor="middle" fill="${f.relayState === 'err' ? '#FCA5A5' : '#FDE68A'}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${escSvg(f.relaySub.slice(0, 30))}</text>
+      <text x="495" y="126" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.2">${escSvg(f.relaySub.slice(30, 64))}</text>
+      <text x="495" y="152" text-anchor="middle" fill="${f.relayState === 'err' ? '#F87171' : '#FBBF24'}" font-family="JetBrains Mono, monospace" font-size="9.2" font-weight="700">${f.relayState === 'err' ? '✕ REJECTED (HTTP 409)' : 'ZERO-KNOWLEDGE'}</text>
+
+      <!-- Right Wire -->
+      <line x1="604" y1="104" x2="716" y2="104" stroke="${rightCol}" stroke-width="${rightActive ? '2.8' : '1.6'}" class="${rightActive ? (f.wireDir === 'b2r' ? 'wire-flow-rev' : 'wire-flow') : ''}"/>
+
+      <!-- Bob Node -->
+      <rect x="716" y="42" width="256" height="128" rx="12" fill="#0F172A" stroke="${borderFor(f.bobState, '#334155')}" stroke-width="${f.bobState !== 'idle' ? '2.4' : '1.4'}" class="${clsFor(f.bobState)}"/>
+      <rect x="716" y="42" width="256" height="34" rx="12" fill="${f.bobState === 'err' ? '#450A0A' : '#064E3B'}"/><rect x="716" y="62" width="256" height="14" fill="${f.bobState === 'err' ? '#450A0A' : '#064E3B'}"/>
+      <text x="844" y="64" text-anchor="middle" fill="${f.bobState === 'err' ? '#FECACA' : '#ECFDF5'}" font-family="Plus Jakarta Sans, sans-serif" font-size="13" font-weight="700">${escSvg(f.bobTitle)}</text>
+      <text x="844" y="106" text-anchor="middle" fill="${f.bobState === 'err' ? '#FCA5A5' : '#F8FAFC'}" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="600">${escSvg(f.bobSub.slice(0, 34))}</text>
+      <text x="844" y="126" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.5">${escSvg(f.bobSub.slice(34, 72))}</text>
+      <text x="844" y="152" text-anchor="middle" fill="${f.bobState === 'ok' ? '#34D399' : f.bobState === 'err' ? '#F87171' : f.bobState === 'active' ? '#60A5FA' : '#64748B'}" font-family="JetBrains Mono, monospace" font-size="9.2" font-weight="700">${f.bobState === 'ok' ? '✓ VERIFIED &amp; DECRYPTED' : f.bobState === 'err' ? '✕ DROPPED · CK SAFE' : f.bobState === 'active' ? '● VERIFYING...' : '○ IDLE'}</text>
+
+      ${packetSvg}
+    </svg>`;
+  }
+
+  /* =====================================================================
+     7. DEMO TAB PART 2: LIVE ANIMATED 5-ATTACK DEFENSE VISUALIZER
+     kind: 'eavesdrop' | 'tamper' | 'replay' | 'mitm' | 'padding'
+     phase: 'idle' | 'running' | 'done'
+     ===================================================================== */
+  function renderAttackStage(kind = 'eavesdrop', phase = 'idle', meta = {}) {
+    const running = phase === 'running';
+    const done = phase === 'done';
+    const msg = escSvg((meta.msg || 'Vault code 4821').slice(0, 22));
+
+    if (kind === 'eavesdrop') {
+      return `<svg viewBox="0 0 960 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eavesdropping HTTP versus E2EE animation">
+        <!-- Row 1: Vulnerable Plain HTTP -->
+        <rect x="14" y="16" width="170" height="68" rx="10" fill="#1F1215" stroke="#F87171"/>
+        <text x="99" y="44" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">PLAIN HTTP</text>
+        <text x="99" y="65" text-anchor="middle" fill="#E2E8F0" font-family="JetBrains Mono, monospace" font-size="9.5">"${msg}"</text>
+        <line x1="184" y1="50" x2="774" y2="50" stroke="#F87171" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+        <rect x="380" y="24" width="200" height="52" rx="9" fill="#450A0A" stroke="#F87171" class="${running ? 'pulse-ring' : ''}"/>
+        <text x="480" y="46" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">SNIFFER SEES PLAINTEXT</text>
+        <text x="480" y="64" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.2">${done ? 'EXPOSED: "' + msg + '"' : 'Wireshark capture...'}</text>
+        ${running || done ? `<g><rect x="-48" y="-11" width="96" height="22" rx="11" fill="#450A0A" stroke="#F87171"/><text x="0" y="4" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="9">PLAINTEXT</text><animateMotion dur="2.1s" repeatCount="indefinite" path="M 190 50 L 765 50"/></g>` : ''}
+        <rect x="774" y="16" width="172" height="68" rx="10" fill="#1F1215" stroke="#F87171"/>
+        <text x="860" y="55" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">COMPROMISED ✕</text>
+
+        <!-- Row 2: SecureMsg E2EE -->
+        <rect x="14" y="106" width="170" height="68" rx="10" fill="#07221B" stroke="#34D399"/>
+        <text x="99" y="134" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">SECUREMSG E2EE</text>
+        <text x="99" y="155" text-anchor="middle" fill="#CBD5E1" font-family="JetBrains Mono, monospace" font-size="9.5">AES-256-CBC + IV</text>
+        <line x1="184" y1="140" x2="774" y2="140" stroke="#34D399" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+        <rect x="380" y="114" width="200" height="52" rx="9" fill="#0F172A" stroke="#34D399"/>
+        <text x="480" y="136" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">SNIFFER SEES HEX ONLY</text>
+        <text x="480" y="154" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.2">7d93a1f84c20b6e4...</text>
+        ${running || done ? `<g><rect x="-50" y="-11" width="100" height="22" rx="11" fill="#064E3B" stroke="#34D399"/><text x="0" y="4" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="9">0x7d93a1...</text><animateMotion dur="2.1s" repeatCount="indefinite" path="M 190 140 L 765 140"/></g>` : ''}
+        <rect x="774" y="106" width="172" height="68" rx="10" fill="#064E3B" stroke="#34D399"/>
+        <text x="860" y="145" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">DEFENDED · 0B LEAK</text>
+      </svg>`;
+    }
+
+    if (kind === 'tamper') {
+      return `<svg viewBox="0 0 960 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Message tampering bit flip intercepted by HMAC">
+        <rect x="16" y="34" width="190" height="102" rx="11" fill="#0F172A" stroke="#38BDF8" stroke-width="1.8"/>
+        <text x="111" y="68" text-anchor="middle" fill="#67E8F9" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">1. ALICE SEALS</text>
+        <text x="111" y="94" text-anchor="middle" fill="#E2E8F0" font-family="JetBrains Mono, monospace" font-size="9.5">AES-CBC + HMAC Tag</text>
+        <text x="111" y="114" text-anchor="middle" fill="#34D399" font-family="JetBrains Mono, monospace" font-size="9.2">Authentic Tag ✓</text>
+
+        <line x1="206" y1="85" x2="354" y2="85" stroke="#38BDF8" stroke-width="2.4" class="${running || done ? 'wire-flow' : ''}"/>
+        ${running || done ? `<g><rect x="-36" y="-11" width="72" height="22" rx="11" fill="#083344" stroke="#38BDF8"/><text x="0" y="4" text-anchor="middle" fill="#67E8F9" font-family="JetBrains Mono, monospace" font-size="9">CT + MAC</text><animateMotion dur="1.3s" repeatCount="indefinite" path="M 212 85 L 348 85"/></g>` : ''}
+
+        <rect x="354" y="34" width="212" height="102" rx="11" fill="#450A0A" stroke="#F87171" stroke-width="2" class="${running ? 'pulse-ring' : ''}"/>
+        <text x="460" y="66" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">2. ATTACKER FLIPS BIT</text>
+        <text x="460" y="94" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10">ct[0]: 1a3f... → 2a3f...</text>
+        <text x="460" y="114" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9">Old HMAC tag kept</text>
+
+        <line x1="566" y1="85" x2="714" y2="85" stroke="#F87171" stroke-width="2.4" class="${running || done ? 'wire-flow' : ''}"/>
+        ${running || done ? `<g><rect x="-42" y="-11" width="84" height="22" rx="11" fill="#450A0A" stroke="#F87171"/><text x="0" y="4" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9">TAMPERED!</text><animateMotion dur="1.3s" repeatCount="indefinite" path="M 572 85 L 708 85"/></g>` : ''}
+
+        <rect x="714" y="34" width="230" height="102" rx="11" fill="#064E3B" stroke="#34D399" stroke-width="2" class="${done ? 'pulse-ring' : ''}"/>
+        <text x="829" y="66" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">3. BOB HMAC GATE</text>
+        <text x="829" y="94" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${done ? 'TAG MISMATCH → DROPPED' : 'Constant-Time Verify'}</text>
+        <text x="829" y="114" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="9.2">Never reaches AES Decrypt</text>
+      </svg>`;
+    }
+
+    if (kind === 'replay') {
+      return `<svg viewBox="0 0 960 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Replay attack blocked by relay HTTP 409 and ratchet">
+        <rect x="16" y="18" width="200" height="62" rx="10" fill="#07221B" stroke="#34D399"/>
+        <text x="116" y="44" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">TX #1 (LEGITIMATE)</text>
+        <text x="116" y="64" text-anchor="middle" fill="#CBD5E1" font-family="JetBrains Mono, monospace" font-size="9.5">id=msg-tx-.. seq=#104</text>
+        <line x1="216" y1="49" x2="720" y2="49" stroke="#34D399" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+        ${running || done ? `<g><rect x="-42" y="-10" width="84" height="20" rx="10" fill="#064E3B" stroke="#34D399"/><text x="0" y="3.5" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="9">FRESH #104</text><animateMotion dur="1.8s" repeatCount="indefinite" path="M 222 49 L 714 49"/></g>` : ''}
+        <rect x="720" y="18" width="224" height="62" rx="10" fill="#064E3B" stroke="#34D399"/>
+        <text x="832" y="44" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">ACCEPTED (HTTP 201)</text>
+        <text x="832" y="64" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="9.2">ID recorded · Key #104 erased</text>
+
+        <rect x="16" y="106" width="200" height="62" rx="10" fill="#450A0A" stroke="#F87171"/>
+        <text x="116" y="132" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">TX #2 (REPLAYED)</text>
+        <text x="116" y="152" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.5">Exact clone of #104</text>
+        <line x1="216" y1="137" x2="450" y2="137" stroke="#F87171" stroke-width="2.4" class="${running || done ? 'wire-flow' : ''}"/>
+        ${running || done ? `<g><rect x="-44" y="-10" width="88" height="20" rx="10" fill="#450A0A" stroke="#F87171"/><text x="0" y="3.5" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="9">REPLAY #104</text><animateMotion dur="1.4s" repeatCount="indefinite" path="M 222 137 L 444 137 L 222 137"/></g>` : ''}
+        <rect x="450" y="106" width="248" height="62" rx="10" fill="#450A0A" stroke="#F87171" stroke-width="2" class="${done ? 'pulse-ring' : ''}"/>
+        <text x="574" y="132" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">RELAY BLOCKS (HTTP 409)</text>
+        <text x="574" y="152" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.2">processed_messages duplicate</text>
+        <rect x="720" y="106" width="224" height="62" rx="10" fill="#111C2E" stroke="#34D399"/>
+        <text x="832" y="134" text-anchor="middle" fill="#34D399" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">BOB PROTECTED</text>
+        <text x="832" y="152" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9">Ratchet also rejects #104</text>
+      </svg>`;
+    }
+
+    if (kind === 'mitm') {
+      return `<svg viewBox="0 0 960 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MITM on unauthenticated DH versus RSA-PSS signed DH">
+        <!-- Top: Unauthenticated DH -->
+        <rect x="16" y="16" width="180" height="68" rx="10" fill="#1F1215" stroke="#F87171"/>
+        <text x="106" y="44" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="700">PLAIN DH (NO SIG)</text>
+        <text x="106" y="64" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.5">Alice sends A</text>
+        <line x1="196" y1="50" x2="764" y2="50" stroke="#F87171" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+        <rect x="366" y="22" width="228" height="56" rx="10" fill="#450A0A" stroke="#F87171"/>
+        <text x="480" y="46" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="700">EVE SWAPS A → E_A</text>
+        <text x="480" y="65" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.2">Eve splits secrets · MITM OK!</text>
+        <rect x="764" y="16" width="180" height="68" rx="10" fill="#1F1215" stroke="#F87171"/>
+        <text x="854" y="54" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">COMPROMISED ✕</text>
+
+        <!-- Bottom: Signed DH -->
+        <rect x="16" y="106" width="180" height="68" rx="10" fill="#1E1B4B" stroke="#818CF8"/>
+        <text x="106" y="134" text-anchor="middle" fill="#E0E7FF" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="700">RSA-PSS SIGNED DH</text>
+        <text x="106" y="154" text-anchor="middle" fill="#C7D2FE" font-family="JetBrains Mono, monospace" font-size="9.5">A + RSA-PSS(A)</text>
+        <line x1="196" y1="140" x2="764" y2="140" stroke="#818CF8" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+        ${running || done ? `<g><rect x="-46" y="-11" width="92" height="22" rx="11" fill="#450A0A" stroke="#F87171"/><text x="0" y="4" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="9">E_A + sig_a</text><animateMotion dur="1.7s" repeatCount="indefinite" path="M 594 140 L 758 140"/></g>` : ''}
+        <rect x="366" y="112" width="228" height="56" rx="10" fill="#182235" stroke="#F87171"/>
+        <text x="480" y="136" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="10.2" font-weight="700">EVE SUBSTITUTES E_A</text>
+        <text x="480" y="155" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9.2">Cannot forge Alice privKey</text>
+        <rect x="764" y="106" width="180" height="68" rx="10" fill="#064E3B" stroke="#34D399" stroke-width="2" class="${done ? 'pulse-ring' : ''}"/>
+        <text x="854" y="135" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">SIGNATURE_INVALID</text>
+        <text x="854" y="154" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="9.2">MITM ABORTED ✓</text>
+      </svg>`;
+    }
+
+    // Default / padding oracle
+    const queries = meta.queries || (done ? '~2,000' : '0');
+    const recovered = escSvg(meta.recovered || (done ? msg : 'Probing bytes 15..0...'));
+    return `<svg viewBox="0 0 960 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vaudenay CBC padding oracle attack versus Encrypt-then-MAC">
+      <!-- Left: Vulnerable Plain CBC -->
+      <rect x="14" y="14" width="452" height="162" rx="12" fill="#1F1215" stroke="#F87171" stroke-width="1.8" class="${running ? 'pulse-ring' : ''}"/>
+      <text x="240" y="40" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">VULNERABLE: UNAUTHENTICATED AES-CBC</text>
+      <rect x="34" y="56" width="160" height="44" rx="8" fill="#450A0A" stroke="#F87171"/>
+      <text x="114" y="75" text-anchor="middle" fill="#FECACA" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700">FORGED IV PROBES</text>
+      <text x="114" y="91" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9">Queries: ${escSvg(queries)}</text>
+      <line x1="194" y1="78" x2="280" y2="78" stroke="#F87171" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+      ${running ? `<circle r="4.5" fill="#F87171"><animateMotion dur="0.6s" repeatCount="indefinite" path="M 196 78 L 278 78 L 196 78"/></circle>` : ''}
+      <rect x="282" y="56" width="164" height="44" rx="8" fill="#0F172A" stroke="#F87171"/>
+      <text x="364" y="75" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700">PADDING ORACLE</text>
+      <text x="364" y="91" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9">Leaks True / False</text>
+      <rect x="34" y="114" width="412" height="46" rx="8" fill="#0B1320" stroke="#F87171"/>
+      <text x="240" y="133" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.5">CRACKED WITHOUT AES KEY:</text>
+      <text x="240" y="150" text-anchor="middle" fill="#FFFFFF" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">${done ? '"' + recovered + '"' : (running ? 'Recovering plaintext byte-by-byte...' : 'Click Execute to run live attack')}</text>
+
+      <!-- Right: SecureMsg Encrypt-then-MAC -->
+      <rect x="494" y="14" width="452" height="162" rx="12" fill="#07221B" stroke="#34D399" stroke-width="1.8" class="${done ? 'pulse-ring' : ''}"/>
+      <text x="720" y="40" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">SECUREMSG: ENCRYPT-THEN-MAC (CBC + HMAC)</text>
+      <rect x="514" y="56" width="150" height="44" rx="8" fill="#182235" stroke="#F87171"/>
+      <text x="589" y="75" text-anchor="middle" fill="#FCA5A5" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700">256 FORGED PROBES</text>
+      <text x="589" y="91" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="9">Reused invalid tag</text>
+      <line x1="664" y1="78" x2="736" y2="78" stroke="#34D399" stroke-width="2.2" class="${running || done ? 'wire-flow' : ''}"/>
+      <rect x="738" y="56" width="188" height="44" rx="8" fill="#064E3B" stroke="#34D399"/>
+      <text x="832" y="75" text-anchor="middle" fill="#D1FAE5" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700">HMAC CHECK FIRST</text>
+      <text x="832" y="91" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="9">Blocks BEFORE unpad</text>
+      <rect x="514" y="114" width="412" height="46" rx="8" fill="#0B1320" stroke="#34D399"/>
+      <text x="720" y="133" text-anchor="middle" fill="#6EE7B7" font-family="JetBrains Mono, monospace" font-size="9.5">RESULT:</text>
+      <text x="720" y="150" text-anchor="middle" fill="#34D399" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">${done ? 'DEFEATED · 0 BITS LEAKED · ABORTED AT 256 PROBES' : 'All forged queries return identical rejection'}</text>
+    </svg>`;
+  }
+
   return {
     renderAnimatedArch,
     renderAnimatedProtocolSequence,
     renderAnimatedRatchet,
     renderAnimatedImplPipeline,
+    renderDemoLiveStage,
+    renderAttackStage,
     trustBoundary,
     dbSchemaErd,
     ARCH_MODES,
