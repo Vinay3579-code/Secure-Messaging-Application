@@ -276,17 +276,72 @@ window.PORTFOLIO_PAGES = {
               </div>
             </div>
 
-            <aside class="hero-dossier" aria-label="Cryptographic specification snapshot">
-              <div class="dossier-head">
-                <span>PROTOCOL SPECIFICATION</span>
-                <span class="live-pill"><span class="live-dot"></span>E2EE VERIFIED</span>
+            <aside class="topo-widget" aria-label="Live Topology Preview and Packet Inspector">
+              <div class="topo-head">
+                <span class="topo-title"><span class="live-dot"></span>Live Topology Preview</span>
+                <span class="topo-port">HTTP :5000 · TLS :5443</span>
               </div>
-              <div class="dossier-row"><span>Key Agreement</span><strong>DH RFC 3526 (2048-bit)</strong></div>
-              <div class="dossier-row"><span>Anti-MITM Identity</span><strong>RSA-2048-PSS + SHA-256</strong></div>
-              <div class="dossier-row"><span>Forward Secrecy</span><strong>HMAC Hash Ratchet</strong></div>
-              <div class="dossier-row"><span>Cipher Suite</span><strong>AES-256-CBC + HMAC</strong></div>
-              <div class="dossier-row"><span>File Encryption</span><strong>AAD Blobs (≤ 10 MB)</strong></div>
-              <div class="dossier-row"><span>Password KDF</span><strong>PBKDF2 · 100k rounds</strong></div>
+
+              <div class="topo-nodes">
+                <div class="topo-node alice">
+                  <div class="tn-head" style="color:#38BDF8;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                    <span>Alice</span>
+                  </div>
+                  <div class="tn-sub">Browser · WebCrypto</div>
+                  <div class="tn-tags">
+                    <span class="tn-tag indigo">DH-2048</span>
+                    <span class="tn-tag teal">RSA-PSS</span>
+                  </div>
+                </div>
+
+                <div class="topo-link">
+                  <div class="topo-track"><div class="topo-pulse"></div></div>
+                  <span class="topo-link-lbl">AES+HMAC</span>
+                </div>
+
+                <div class="topo-node relay">
+                  <div class="tn-head" style="color:#C7D2FE;justify-content:center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="7" rx="1.5"/><rect x="2" y="14" width="20" height="7" rx="1.5"/></svg>
+                    <span>Relay</span>
+                  </div>
+                  <div class="tn-relay-meta">Verify Sig<br/>409 Replay<br/>0 Plaintext</div>
+                </div>
+
+                <div class="topo-link">
+                  <div class="topo-track"><div class="topo-pulse d2"></div></div>
+                  <span class="topo-link-lbl">Ciphertext</span>
+                </div>
+
+                <div class="topo-node bob">
+                  <div class="tn-head" style="color:#34D399;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                    <span>Bob</span>
+                  </div>
+                  <div class="tn-sub">Browser · WebCrypto</div>
+                  <div class="tn-tags">
+                    <span class="tn-tag teal">MAC Valid</span>
+                    <span class="tn-tag amber">MK Erased</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pkt-box">
+                <div class="pkt-top">
+                  <span class="pkt-kicker">PACKET INSPECTOR</span>
+                  <div class="pkt-tabs" id="hero-pkt-tabs">
+                    <button type="button" class="pkt-tab active" data-hero-pkt="chat">Chat Msg</button>
+                    <button type="button" class="pkt-tab" data-hero-pkt="dh">DH Init</button>
+                    <button type="button" class="pkt-tab" data-hero-pkt="file">File Blob</button>
+                  </div>
+                </div>
+                <div class="pkt-meta">
+                  <span class="pkt-stage" id="hero-pkt-stage">Stage 7 // Encrypted Chat Frame</span>
+                  <span class="pkt-cipher" id="hero-pkt-cipher">AES-256-CBC + HMAC-SHA256</span>
+                </div>
+                <pre class="pkt-pre" id="hero-pkt-json"></pre>
+                <div class="pkt-foot" id="hero-pkt-foot"></div>
+              </div>
             </aside>
           </div>
         </div>

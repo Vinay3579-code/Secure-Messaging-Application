@@ -649,6 +649,69 @@
     });
   }
 
+  // ---------- Hydrator 0: Home Hero Interactive Packet Inspector ----------
+  function hydrateHeroPacketInspector() {
+    const tabs = document.getElementById('hero-pkt-tabs');
+    const stageEl = document.getElementById('hero-pkt-stage');
+    const cipherEl = document.getElementById('hero-pkt-cipher');
+    const jsonEl = document.getElementById('hero-pkt-json');
+    const footEl = document.getElementById('hero-pkt-foot');
+    if (!tabs || !jsonEl) return;
+
+    const SAMPLES = {
+      chat: {
+        stage: 'Stage 7 // Encrypted Chat Packet',
+        cipher: 'AES-256-CBC + HMAC-SHA256',
+        html: `{
+  <span class="jk">"message_id"</span>: <span class="js">"msg-173269-9f4ab"</span>,
+  <span class="jk">"seq_no"</span>: <span class="jn">2</span>,
+  <span class="jk">"cipher_mode"</span>: <span class="js">"cbc-hmac"</span>,
+  <span class="jk">"iv"</span>: <span class="js">"8e4c19f02a7b63d1e5084b2c71a9f403"</span>,
+  <span class="jk">"ciphertext"</span>: <span class="js">"7d93a1f84c20b6e419fa730c52d8e4b1..."</span>,
+  <span class="jk">"hmac_tag"</span>: <span class="js">"c4f18e2b9a70d53e8146b2c9f01a7e54..."</span>
+}`,
+        foot: 'Relayed via POST /api/messages/send. Constant-time HMAC verified BEFORE AES decryption; message key erased after use.'
+      },
+      dh: {
+        stage: 'Stage 3 // Signed Diffie-Hellman Handshake',
+        cipher: 'RFC 3526 MODP-2048 + RSA-PSS',
+        html: `{
+  <span class="jk">"peer"</span>: <span class="js">"bob"</span>,
+  <span class="jk">"g"</span>: <span class="jn">2</span>,
+  <span class="jk">"p_hex"</span>: <span class="js">"ffffffffffffffffc90fdaa2...ffffffff"</span>,
+  <span class="jk">"pub_a"</span>: <span class="js">"71f0e8a4c291b3d0e6a4f19c8b7e..."</span>,
+  <span class="jk">"sig_a"</span>: <span class="js">"a92b41c8e7f0153d64b92a1e4c0f..."</span>
+}`,
+        foot: 'Signed payload: "cns-dh-v2|A|alice|bob|<pub_a>". Relay & peer enforce subgroup A^q ≡ 1 (mod p) and RSA-2048-PSS.'
+      },
+      file: {
+        stage: 'Stage 8 // E2EE File Descriptor (≤ 10 MB)',
+        cipher: 'Per-File 256b Key + AAD Blob',
+        html: `{
+  <span class="jk">"cns"</span>: <span class="js">"file"</span>,
+  <span class="jk">"v"</span>: <span class="jn">1</span>,
+  <span class="jk">"id"</span>: <span class="js">"764dcd61faf02da1b1ab3acb5af07563"</span>,
+  <span class="jk">"name"</span>: <span class="js">"report.pdf"</span>,
+  <span class="jk">"size"</span>: <span class="jn">12112</span>,
+  <span class="jk">"key"</span>: <span class="js">"9c4f7e2a81d0b3... (sent inside E2EE chat)"</span>
+}`,
+        foot: 'Server stores ONLY opaque IV(16B) || AES-CBC || HMAC(32B) in uploads/<id>.bin — never sees file name, type, or key.'
+      }
+    };
+
+    function select(key) {
+      const s = SAMPLES[key] || SAMPLES.chat;
+      tabs.querySelectorAll('.pkt-tab').forEach((b) => b.classList.toggle('active', b.dataset.heroPkt === key));
+      stageEl.textContent = s.stage;
+      cipherEl.textContent = s.cipher;
+      jsonEl.innerHTML = s.html;
+      footEl.textContent = s.foot;
+    }
+
+    tabs.querySelectorAll('.pkt-tab').forEach((b) => b.addEventListener('click', () => select(b.dataset.heroPkt)));
+    select('chat');
+  }
+
   // ---------- Hash Router ----------
   function currentRouteId() {
     const raw = (window.location.hash || '#home').replace(/^#\/?/, '').toLowerCase();
@@ -676,6 +739,7 @@
       });
     });
 
+    hydrateHeroPacketInspector();
     hydrateArchStages();
     hydrateProtocolTab();
     hydrateImplementationTab();
